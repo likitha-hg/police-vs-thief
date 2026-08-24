@@ -1,0 +1,435 @@
+/* =====================================
+   LEVEL BOARD
+===================================== */
+
+.level-board {
+  width: 100vw;
+  height: 100vh;
+  background: #B9E3E8;
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* =====================================
+   TOP ICONS
+===================================== */
+
+.icon-btn {
+  position: absolute;
+  top: 20px;
+
+  font-size: 28px;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+
+  z-index: 20;
+}
+
+.home-btn {
+  left: 25px;
+}
+
+.sound-btn {
+  right: 25px;
+}
+
+
+/* =====================================
+   HEADER
+===================================== */
+
+.level-header {
+  position: absolute;
+
+  top: 60px;
+
+  width: 100%;
+
+  text-align: center;
+
+  z-index: 20;
+}
+
+.level-title {
+  font-size: 28px;
+
+  font-weight: bold;
+
+  color: #0F7F91;
+}
+
+.mission-box {
+  margin-top: 10px;
+
+  font-size: 18px;
+
+  font-weight: bold;
+
+  color: #0F7F91;
+}
+
+
+/* =====================================
+   BOARD
+===================================== */
+
+.board-area {
+  position: absolute;
+
+  top: 170px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: 800px;
+  height: 700px;
+
+  position: relative;
+}
+
+
+/* =====================================
+   CONNECTIONS
+===================================== */
+
+.lines {
+  width: 100%;
+  height: 100%;
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  z-index: 1;
+}
+
+.lines line {
+  stroke: #0F7F91;
+
+  stroke-width: 8;
+
+  stroke-linecap: round;
+}
+
+
+/* =====================================
+   NODES
+===================================== */
+
+.node {
+  width: 55px;
+  height: 55px;
+
+  border-radius: 50%;
+
+  background: white;
+
+  border: 4px solid #0F7F91;
+
+  position: absolute;
+
+  transform: translate(-50%, -50%);
+
+  cursor: pointer;
+
+  z-index: 5;
+
+  box-sizing: border-box;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.node:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+
+/* =====================================
+   EXIT NODES
+===================================== */
+
+.exit-node {
+  border: 4px solid #00B050;
+}
+
+
+/* =====================================
+   HIGHLIGHT VALID MOVES
+===================================== */
+
+/*
+.highlight-node {
+  background: yellow;
+}
+*/
+
+
+/* =====================================
+   THIEF
+===================================== */
+
+.thief-token {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 50%;
+
+  background: black;
+
+  color: white;
+
+  position: absolute;
+
+  transform: translate(-50%, -50%);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-weight: bold;
+
+  z-index: 10;
+
+  pointer-events: none;
+}
+
+
+/* =====================================
+   POLICE
+===================================== */
+
+.police-token {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 50%;
+
+  background: #0070FF;
+
+  color: white;
+
+  position: absolute;
+
+  transform: translate(-50%, -50%);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-weight: bold;
+
+  z-index: 10;
+
+  cursor: pointer;
+
+  box-sizing: border-box;
+
+  transition:
+    transform 0.15s ease;
+}
+
+.police-token:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+
+/* =====================================
+   SELECTED POLICE
+===================================== */
+
+.selected-police {
+  border: 4px solid yellow;
+}
+
+
+/* =====================================
+   RESULT OVERLAY
+===================================== */
+
+.game-result-overlay {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.25);
+
+  z-index: 100;
+}
+
+
+/* =====================================
+   RESULT POPUP
+===================================== */
+
+.game-result {
+  width: 360px;
+
+  padding: 35px 30px;
+
+  background: white;
+
+  border-radius: 18px;
+
+  text-align: center;
+
+  box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.25);
+
+  animation: popupAppear 0.25s ease-out;
+}
+
+
+/* =====================================
+   RESULT TITLE
+===================================== */
+
+.game-result h2 {
+  margin: 0 0 15px;
+
+  font-size: 30px;
+
+  font-weight: bold;
+
+  color: #0F7F91;
+}
+
+
+/* =====================================
+   RESULT MESSAGE
+===================================== */
+
+.game-result p {
+  margin: 0 0 25px;
+
+  font-size: 17px;
+
+  color: #555;
+}
+
+
+/* =====================================
+   RESULT BUTTONS
+===================================== */
+
+.result-buttons {
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 15px;
+}
+
+
+/* =====================================
+   RETRY / CONTINUE BUTTONS
+===================================== */
+
+.retry-btn,
+.continue-btn {
+  min-width: 110px;
+
+  padding: 12px 22px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* =====================================
+   RETRY BUTTON
+===================================== */
+
+.retry-btn {
+  background: #0F7F91;
+
+  color: white;
+}
+
+
+/* =====================================
+   CONTINUE BUTTON
+===================================== */
+
+.continue-btn {
+  background: #00B050;
+
+  color: white;
+}
+
+
+/* =====================================
+   BUTTON HOVER
+===================================== */
+
+.retry-btn:hover,
+.continue-btn:hover {
+  transform: scale(1.05);
+
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+
+/* =====================================
+   POPUP ANIMATION
+===================================== */
+
+@keyframes popupAppear {
+
+  from {
+    opacity: 0;
+
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: scale(1);
+  }
+
+}
+
+
+/* =====================================
+   RESPONSIVE BOARD
+===================================== */
+
+@media (max-width: 850px) {
+
+  .board-area {
+    width: 95vw;
+  }
+
+}
