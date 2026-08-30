@@ -1,3 +1,4 @@
+
 import "../styles/Level4.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -145,7 +146,7 @@ function Level4() {
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
-  // UNLOCK NEXT LEVEL
+  // UNLOCK LEVEL 5
   // =====================================
 
   const unlockNextLevel = () => {
@@ -153,14 +154,16 @@ function Level4() {
       localStorage.getItem("unlockedLevel") || 1
     );
 
-    if (5 > savedLevel) {
+    const nextLevel = 5;
+
+    if (nextLevel > savedLevel) {
       localStorage.setItem(
         "unlockedLevel",
-        "5"
+        String(nextLevel)
       );
 
       console.log(
-        "Unlocked Level 5"
+        "Level 5 unlocked"
       );
     }
   };
@@ -209,6 +212,7 @@ function Level4() {
     currentPolicePositions
   ) => {
     if (
+      !currentThiefPosition ||
       !graph[currentThiefPosition]
     ) {
       return [];
@@ -270,6 +274,7 @@ function Level4() {
   // =====================================
 
   const moveThief = async (
+    currentThiefPosition,
     updatedPolicePositions
   ) => {
     setTurnInProgress(true);
@@ -283,7 +288,7 @@ function Level4() {
         level: 4,
 
         thief:
-          thiefPosition,
+          currentThiefPosition,
 
         police:
           Object.values(
@@ -321,6 +326,10 @@ function Level4() {
         response.status
       );
 
+      // =================================
+      // RESPONSE ERROR
+      // =================================
+
       if (!response.ok) {
         throw new Error(
           `Prediction request failed: ${response.status}`
@@ -328,7 +337,7 @@ function Level4() {
       }
 
       // =================================
-      // READ RESPONSE
+      // RESPONSE DATA
       // =================================
 
       const data =
@@ -370,7 +379,7 @@ function Level4() {
 
       const validThiefMoves =
         getThiefAvailableMoves(
-          thiefPosition,
+          currentThiefPosition,
           updatedPolicePositions
         );
 
@@ -380,14 +389,14 @@ function Level4() {
       );
 
       // =================================
-      // NO VALID MOVES
+      // NO AVAILABLE MOVES
       // =================================
 
       if (
         validThiefMoves.length === 0
       ) {
         console.log(
-          "Level 4 thief has no valid moves."
+          "Level 4 thief is trapped."
         );
 
         setGameStatus(
@@ -428,7 +437,7 @@ function Level4() {
       // =================================
 
       console.log(
-        `Level 4 thief moving ${thiefPosition} → ${nextMove}`
+        `Level 4 thief moving ${currentThiefPosition} → ${nextMove}`
       );
 
       setThiefPosition(
@@ -542,7 +551,7 @@ function Level4() {
     }
 
     // =================================
-    // UPDATED POSITIONS
+    // UPDATED POLICE POSITIONS
     // =================================
 
     const updatedPositions = {
@@ -597,6 +606,7 @@ function Level4() {
     // =================================
 
     await moveThief(
+      thiefPosition,
       updatedPositions
     );
   };
@@ -670,6 +680,8 @@ function Level4() {
 
       <div className="top-bar">
 
+        {/* SOUND */}
+
         <img
           src={
             isMuted
@@ -686,6 +698,8 @@ function Level4() {
             toggleMute
           }
         />
+
+        {/* HOME */}
 
         <img
           src={home}
@@ -741,6 +755,7 @@ function Level4() {
           width="100%"
           height="100%"
         >
+
           {connections.map(
             (
               [from, to],
@@ -763,6 +778,7 @@ function Level4() {
               />
             )
           )}
+
         </svg>
 
         {/* =================================
@@ -882,15 +898,17 @@ function Level4() {
         )}
 
         {/* =================================
-            AI STATUS
+            PPO THINKING
         ================================= */}
 
         {turnInProgress &&
           gameStatus ===
             "playing" && (
+
             <div className="ai-status">
               Thief is thinking...
             </div>
+
           )}
 
         {/* =================================
@@ -903,6 +921,10 @@ function Level4() {
           <div className="game-result-overlay">
 
             <div className="game-result">
+
+              {/* ============================
+                  LEVEL CLEARED
+              ============================ */}
 
               {gameStatus ===
               "cleared" ? (
@@ -938,7 +960,13 @@ function Level4() {
 
                   </div>
                 </>
+
               ) : (
+
+                /* ============================
+                   LEVEL FAILED
+                ============================ */
+
                 <>
                   <h2>
                     LEVEL FAILED
@@ -962,6 +990,7 @@ function Level4() {
 
                   </div>
                 </>
+
               )}
 
             </div>

@@ -1,3 +1,4 @@
+
 import "../styles/Level8.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -146,10 +147,11 @@ function Level8() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
+  // Prevent police from moving while PPO is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
-  // SAVE PROGRESS
+  // UNLOCK LEVEL 9
   // =====================================
 
   const unlockNextLevel = () => {
@@ -172,12 +174,13 @@ function Level8() {
   };
 
   // =====================================
-  // VALID POLICE MOVES
+  // GET VALID POLICE MOVES
   // =====================================
 
   const getValidMoves = (
     policeKey,
-    currentPolicePositions = policePositions
+    currentPolicePositions = policePositions,
+    currentThiefPosition = thiefPosition
   ) => {
     const currentNode =
       currentPolicePositions[policeKey];
@@ -192,7 +195,7 @@ function Level8() {
     return graph[currentNode].filter(
       (node) =>
         // Police cannot move onto thief
-        node !== thiefPosition &&
+        node !== currentThiefPosition &&
 
         // Police cannot occupy another police node
         !Object.entries(
@@ -206,7 +209,7 @@ function Level8() {
   };
 
   // =====================================
-  // THIEF AVAILABLE MOVES
+  // GET THIEF AVAILABLE MOVES
   // =====================================
 
   const getThiefAvailableMoves = (
@@ -214,6 +217,7 @@ function Level8() {
     currentPolicePositions
   ) => {
     if (
+      !currentThiefPosition ||
       !graph[currentThiefPosition]
     ) {
       return [];
@@ -247,14 +251,6 @@ function Level8() {
   };
 
   // =====================================
-  // HOME
-  // =====================================
-
-  const handleHome = () => {
-    navigate("/");
-  };
-
-  // =====================================
   // SELECT POLICE
   // =====================================
 
@@ -281,11 +277,37 @@ function Level8() {
   // =====================================
 
   const moveThief = async (
+    currentThiefPosition,
     updatedPolicePositions
   ) => {
     setTurnInProgress(true);
 
     try {
+      // =================================
+      // REQUEST BODY
+      // =================================
+
+      const requestBody = {
+        level: 8,
+
+        thief:
+          currentThiefPosition,
+
+        police:
+          Object.values(
+            updatedPolicePositions
+          ),
+      };
+
+      console.log(
+        "Sending Level 8 PPO request:",
+        requestBody
+      );
+
+      // =================================
+      // CALL PPO API
+      // =================================
+
       const response = await fetch(
         `${API_URL}/predict`,
         {
@@ -296,28 +318,36 @@ function Level8() {
               "application/json",
           },
 
-          body: JSON.stringify({
-            level: 8,
-            thief: thiefPosition,
-            police:
-              Object.values(
-                updatedPolicePositions
-              ),
-          }),
+          body: JSON.stringify(
+            requestBody
+          ),
         }
       );
 
+      console.log(
+        "Level 8 PPO status:",
+        response.status
+      );
+
+      // =================================
+      // RESPONSE ERROR
+      // =================================
+
       if (!response.ok) {
         throw new Error(
-          "Prediction request failed"
+          `Prediction request failed: ${response.status}`
         );
       }
+
+      // =================================
+      // RESPONSE DATA
+      // =================================
 
       const data =
         await response.json();
 
       console.log(
-        "Level 8 AI:",
+        "Level 8 PPO response:",
         data
       );
 
@@ -326,24 +356,33 @@ function Level8() {
       // =================================
 
       if (data.error) {
-        console.log(
-          "PPO API error:",
+        console.error(
+          "Level 8 PPO error:",
           data.error
         );
 
         return;
       }
 
+      // =================================
+      // PPO MOVE
+      // =================================
+
       const nextMove =
         data.next_move;
 
+      console.log(
+        "Level 8 PPO selected move:",
+        nextMove
+      );
+
       // =================================
-      // VALID THIEF MOVES
+      // GET VALID THIEF MOVES
       // =================================
 
       const validThiefMoves =
         getThiefAvailableMoves(
-          thiefPosition,
+          currentThiefPosition,
           updatedPolicePositions
         );
 
@@ -353,13 +392,15 @@ function Level8() {
       );
 
       // =================================
-      // NO AVAILABLE MOVE
+      // NO AVAILABLE MOVES
       // =================================
 
       if (
         validThiefMoves.length === 0
       ) {
-        unlockNextLevel();
+        console.log(
+          "Level 8 thief is trapped."
+        );
 
         setGameStatus(
           "cleared"
@@ -368,6 +409,8 @@ function Level8() {
         setSelectedPolice(
           null
         );
+
+        unlockNextLevel();
 
         return;
       }
@@ -382,8 +425,8 @@ function Level8() {
           nextMove
         )
       ) {
-        console.log(
-          "Invalid PPO move:",
+        console.error(
+          "Invalid Level 8 PPO move:",
           nextMove,
           "Valid moves:",
           validThiefMoves
@@ -395,6 +438,10 @@ function Level8() {
       // =================================
       // MOVE THIEF
       // =================================
+
+      console.log(
+        `Level 8 thief moving ${currentThiefPosition} → ${nextMove}`
+      );
 
       setThiefPosition(
         nextMove
@@ -409,6 +456,10 @@ function Level8() {
           nextMove
         )
       ) {
+        console.log(
+          "Level 8 thief reached exit."
+        );
+
         setGameStatus(
           "failed"
         );
@@ -430,7 +481,9 @@ function Level8() {
           updatedPolicePositions
         )
       ) {
-        unlockNextLevel();
+        console.log(
+          "Level 8 thief is trapped."
+        );
 
         setGameStatus(
           "cleared"
@@ -440,12 +493,12 @@ function Level8() {
           null
         );
 
-        return;
+        unlockNextLevel();
       }
 
     } catch (error) {
-      console.log(
-        "Level 8 thief move error:",
+      console.error(
+        "Level 8 thief movement error:",
         error
       );
 
@@ -463,7 +516,9 @@ function Level8() {
   const handleNodeClick = async (
     nodeKey
   ) => {
-    if (!selectedPolice) {
+    if (
+      !selectedPolice
+    ) {
       return;
     }
 
@@ -476,6 +531,10 @@ function Level8() {
     if (turnInProgress) {
       return;
     }
+
+    // =================================
+    // VALID POLICE MOVES
+    // =================================
 
     const validMoves =
       getValidMoves(
@@ -500,9 +559,15 @@ function Level8() {
 
     const updatedPositions = {
       ...policePositions,
+
       [selectedPolice]:
         nodeKey,
     };
+
+    console.log(
+      "Level 8 police moved:",
+      updatedPositions
+    );
 
     // =================================
     // UPDATE POLICE
@@ -526,20 +591,25 @@ function Level8() {
         updatedPositions
       )
     ) {
-      unlockNextLevel();
+      console.log(
+        "Level 8 police trapped the thief."
+      );
 
       setGameStatus(
         "cleared"
       );
 
+      unlockNextLevel();
+
       return;
     }
 
     // =================================
-    // THIEF TURN
+    // THIEF GETS TURN
     // =================================
 
     await moveThief(
+      thiefPosition,
       updatedPositions
     );
   };
@@ -549,6 +619,10 @@ function Level8() {
   // =====================================
 
   const handleRetry = () => {
+    console.log(
+      "Level 8 restarted."
+    );
+
     setPolicePositions({
       ...INITIAL_POLICE_POSITIONS,
     });
@@ -575,9 +649,23 @@ function Level8() {
   // =====================================
 
   const handleContinue = () => {
+    console.log(
+      "Moving to Level 9"
+    );
+
+    unlockNextLevel();
+
     navigate(
       "/level9"
     );
+  };
+
+  // =====================================
+  // HOME
+  // =====================================
+
+  const handleHome = () => {
+    navigate("/");
   };
 
   // =====================================
@@ -592,6 +680,8 @@ function Level8() {
       ================================= */}
 
       <div className="top-bar">
+
+        {/* SOUND */}
 
         <img
           src={
@@ -609,6 +699,8 @@ function Level8() {
             toggleMute
           }
         />
+
+        {/* HOME */}
 
         <img
           src={home}
@@ -664,6 +756,7 @@ function Level8() {
           width="100%"
           height="100%"
         >
+
           {connections.map(
             (
               [from, to],
@@ -686,6 +779,7 @@ function Level8() {
               />
             )
           )}
+
         </svg>
 
         {/* =================================
@@ -732,8 +826,11 @@ function Level8() {
                   }
                 `}
                 style={{
-                  left: `${pos.x}px`,
-                  top: `${pos.y}px`,
+                  left:
+                    `${pos.x}px`,
+
+                  top:
+                    `${pos.y}px`,
                 }}
               />
             );
@@ -747,8 +844,15 @@ function Level8() {
         <div
           className="thief-token"
           style={{
-            left: `${nodes[thiefPosition].x}px`,
-            top: `${nodes[thiefPosition].y}px`,
+            left:
+              `${nodes[
+                thiefPosition
+              ].x}px`,
+
+            top:
+              `${nodes[
+                thiefPosition
+              ].y}px`,
           }}
         >
           T
@@ -781,8 +885,15 @@ function Level8() {
                 )
               }
               style={{
-                left: `${nodes[node].x}px`,
-                top: `${nodes[node].y}px`,
+                left:
+                  `${nodes[
+                    node
+                  ].x}px`,
+
+                top:
+                  `${nodes[
+                    node
+                  ].y}px`,
               }}
             >
               P
@@ -798,9 +909,11 @@ function Level8() {
         {turnInProgress &&
           gameStatus ===
             "playing" && (
+
             <div className="ai-status">
               Thief is thinking...
             </div>
+
           )}
 
         {/* =================================
@@ -815,21 +928,21 @@ function Level8() {
             <div className="game-result">
 
               <h2>
-                {
-                  gameStatus ===
+
+                {gameStatus ===
                   "cleared"
                     ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"
-                }
+                    : "LEVEL FAILED"}
+
               </h2>
 
               <p>
-                {
-                  gameStatus ===
+
+                {gameStatus ===
                   "cleared"
                     ? "The police trapped the thief."
-                    : "The thief reached the exit."
-                }
+                    : "The thief reached the exit."}
+
               </p>
 
               <div className="result-buttons">
