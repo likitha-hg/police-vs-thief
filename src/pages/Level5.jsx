@@ -165,6 +165,9 @@ function Level5() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
+  // Prevent multiple actions while PPO is thinking
+  const [turnInProgress, setTurnInProgress] = useState(false);
+
   // =====================================
   // UNLOCK NEXT LEVEL
   // =====================================
@@ -184,26 +187,59 @@ function Level5() {
   };
 
   // =====================================
-  // VALID POLICE MOVES
+  // GET VALID POLICE MOVES
   // =====================================
 
   const getValidMoves = (
     policeKey,
-    currentPolicePositions = policePositions
+    currentPolicePositions = policePositions,
+    currentThiefPosition = thiefPosition
   ) => {
     const currentNode =
       currentPolicePositions[policeKey];
 
+    if (!graph[currentNode]) {
+      return [];
+    }
+
     return graph[currentNode].filter(
       (node) =>
         // Police cannot move onto thief
-        node !== thiefPosition &&
+        node !== currentThiefPosition &&
 
         // Police cannot occupy another police node
         !Object.entries(currentPolicePositions)
-          .filter(([key]) => key !== policeKey)
-          .map(([, position]) => position)
+          .filter(
+            ([key]) =>
+              key !== policeKey
+          )
+          .map(
+            ([, position]) =>
+              position
+          )
           .includes(node)
+    );
+  };
+
+  // =====================================
+  // GET THIEF AVAILABLE MOVES
+  // =====================================
+
+  const getThiefAvailableMoves = (
+    currentThiefPosition,
+    currentPolicePositions
+  ) => {
+    if (!graph[currentThiefPosition]) {
+      return [];
+    }
+
+    return graph[
+      currentThiefPosition
+    ].filter(
+      (node) =>
+        !Object.values(
+          currentPolicePositions
+        ).includes(node)
     );
   };
 
@@ -216,11 +252,9 @@ function Level5() {
     currentPolicePositions
   ) => {
     const availableMoves =
-      graph[currentThief].filter(
-        (node) =>
-          !Object.values(
-            currentPolicePositions
-          ).includes(node)
+      getThiefAvailableMoves(
+        currentThief,
+        currentPolicePositions
       );
 
     return availableMoves.length === 0;
@@ -230,12 +264,22 @@ function Level5() {
   // SELECT POLICE
   // =====================================
 
-  const handlePoliceClick = (policeKey) => {
-    if (gameStatus !== "playing") {
+  const handlePoliceClick = (
+    policeKey
+  ) => {
+    if (
+      gameStatus !== "playing"
+    ) {
       return;
     }
 
-    setSelectedPolice(policeKey);
+    if (turnInProgress) {
+      return;
+    }
+
+    setSelectedPolice(
+      policeKey
+    );
   };
 
   // =====================================
@@ -243,38 +287,77 @@ function Level5() {
   // =====================================
 
   const moveThief = async (
+    currentThiefPosition,
     updatedPolicePositions
   ) => {
+    setTurnInProgress(true);
+
     try {
+      // =================================
+      // REQUEST DATA
+      // =================================
+
+      const requestBody = {
+        level: 5,
+
+        thief:
+          currentThiefPosition,
+
+        police:
+          Object.values(
+            updatedPolicePositions
+          ),
+      };
+
+      console.log(
+        "Sending Level 5 PPO request:",
+        requestBody
+      );
+
+      // =================================
+      // CALL FASTAPI
+      // =================================
+
       const response = await fetch(
         `${API_URL}/predict`,
         {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
-          body: JSON.stringify({
-            level: 5,
-            thief: thiefPosition,
-            police: Object.values(
-              updatedPolicePositions
-            ),
-          }),
+          body: JSON.stringify(
+            requestBody
+          ),
         }
       );
 
+      console.log(
+        "Level 5 PPO response status:",
+        response.status
+      );
+
+      // =================================
+      // RESPONSE ERROR
+      // =================================
+
       if (!response.ok) {
         throw new Error(
-          "Prediction request failed"
+          `Prediction request failed: ${response.status}`
         );
       }
 
-      const data = await response.json();
+      // =================================
+      // READ RESPONSE
+      // =================================
+
+      const data =
+        await response.json();
 
       console.log(
-        "Level 5 AI:",
+        "Level 5 PPO response:",
         data
       );
 
@@ -284,29 +367,66 @@ function Level5() {
 
       if (data.error) {
         console.error(
-          "PPO API error:",
+          "Level 5 PPO API error:",
           data.error
         );
 
         return;
       }
 
-      const nextMove = data.next_move;
+      // =================================
+      // GET PPO MOVE
+      // =================================
+
+      const nextMove =
+        data.next_move;
+
+      console.log(
+        "Level 5 PPO selected move:",
+        nextMove
+      );
 
       // =================================
       // VALID THIEF MOVES
       // =================================
 
       const validThiefMoves =
-        graph[thiefPosition].filter(
-          (node) =>
-            !Object.values(
-              updatedPolicePositions
-            ).includes(node)
+        getThiefAvailableMoves(
+          currentThiefPosition,
+          updatedPolicePositions
         );
 
+      console.log(
+        "Level 5 valid thief moves:",
+        validThiefMoves
+      );
+
       // =================================
-      // VALIDATE PPO MOVE
+      // NO VALID MOVES
+      // =================================
+
+      if (
+        validThiefMoves.length === 0
+      ) {
+        console.log(
+          "Thief has no valid moves."
+        );
+
+        setGameStatus(
+          "cleared"
+        );
+
+        setSelectedPolice(
+          null
+        );
+
+        unlockNextLevel();
+
+        return;
+      }
+
+      // =================================
+      // INVALID PPO MOVE
       // =================================
 
       if (
@@ -328,17 +448,34 @@ function Level5() {
       // MOVE THIEF
       // =================================
 
-      setThiefPosition(nextMove);
+      console.log(
+        `Thief moving ${currentThiefPosition} → ${nextMove}`
+      );
+
+      setThiefPosition(
+        nextMove
+      );
 
       // =================================
       // THIEF REACHED EXIT
       // =================================
 
       if (
-        EXIT_NODES.includes(nextMove)
+        EXIT_NODES.includes(
+          nextMove
+        )
       ) {
-        setGameStatus("failed");
-        setSelectedPolice(null);
+        console.log(
+          "Thief reached exit."
+        );
+
+        setGameStatus(
+          "failed"
+        );
+
+        setSelectedPolice(
+          null
+        );
 
         return;
       }
@@ -353,18 +490,29 @@ function Level5() {
           updatedPolicePositions
         )
       ) {
-        setGameStatus("cleared");
-        setSelectedPolice(null);
+        console.log(
+          "Thief is trapped."
+        );
 
-        // Unlock Level 6
+        setGameStatus(
+          "cleared"
+        );
+
+        setSelectedPolice(
+          null
+        );
+
         unlockNextLevel();
-
-        return;
       }
+
     } catch (error) {
       console.error(
-        "Level 5 thief move error:",
+        "Level 5 thief movement error:",
         error
+      );
+    } finally {
+      setTurnInProgress(
+        false
       );
     }
   };
@@ -377,11 +525,24 @@ function Level5() {
     nodeKey
   ) => {
     if (
-      !selectedPolice ||
+      !selectedPolice
+    ) {
+      return;
+    }
+
+    if (
       gameStatus !== "playing"
     ) {
       return;
     }
+
+    if (turnInProgress) {
+      return;
+    }
+
+    // =================================
+    // VALID POLICE MOVES
+    // =================================
 
     const validMoves =
       getValidMoves(
@@ -393,7 +554,9 @@ function Level5() {
     // =================================
 
     if (
-      !validMoves.includes(nodeKey)
+      !validMoves.includes(
+        nodeKey
+      )
     ) {
       return;
     }
@@ -404,8 +567,15 @@ function Level5() {
 
     const updatedPositions = {
       ...policePositions,
-      [selectedPolice]: nodeKey,
+
+      [selectedPolice]:
+        nodeKey,
     };
+
+    console.log(
+      "Police moved:",
+      updatedPositions
+    );
 
     // =================================
     // UPDATE POLICE
@@ -415,10 +585,12 @@ function Level5() {
       updatedPositions
     );
 
-    setSelectedPolice(null);
+    setSelectedPolice(
+      null
+    );
 
     // =================================
-    // CHECK POLICE WIN
+    // CHECK IF THIEF IS TRAPPED
     // =================================
 
     if (
@@ -427,9 +599,14 @@ function Level5() {
         updatedPositions
       )
     ) {
-      setGameStatus("cleared");
+      console.log(
+        "Police trapped the thief."
+      );
 
-      // Unlock Level 6
+      setGameStatus(
+        "cleared"
+      );
+
       unlockNextLevel();
 
       return;
@@ -440,12 +617,13 @@ function Level5() {
     // =================================
 
     await moveThief(
+      thiefPosition,
       updatedPositions
     );
   };
 
   // =====================================
-  // RETRY
+  // RETRY LEVEL
   // =====================================
 
   const handleRetry = () => {
@@ -457,21 +635,37 @@ function Level5() {
       INITIAL_THIEF_POSITION
     );
 
-    setSelectedPolice(null);
+    setSelectedPolice(
+      null
+    );
 
-    setGameStatus("playing");
+    setGameStatus(
+      "playing"
+    );
+
+    setTurnInProgress(
+      false
+    );
+
+    console.log(
+      "Level 5 restarted."
+    );
   };
 
   // =====================================
-  // CONTINUE
+  // CONTINUE TO LEVEL 6
   // =====================================
 
   const handleContinue = () => {
-    // Make sure Level 6 is unlocked
+    console.log(
+      "Moving to Level 6"
+    );
+
     unlockNextLevel();
 
-    // Go to Level 6
-    navigate("/level6");
+    navigate(
+      "/level6"
+    );
   };
 
   // =====================================
@@ -479,7 +673,9 @@ function Level5() {
   // =====================================
 
   const handleHome = () => {
-    navigate("/menu");
+    navigate(
+      "/menu"
+    );
   };
 
   // =====================================
@@ -496,6 +692,7 @@ function Level5() {
       <div className="top-bar">
 
         {/* SOUND */}
+
         <img
           src={
             isMuted
@@ -508,21 +705,26 @@ function Level5() {
               : "sound on"
           }
           className="top-icon"
-          onClick={toggleMute}
+          onClick={
+            toggleMute
+          }
         />
 
         {/* HOME */}
+
         <img
           src={home}
           alt="home"
           className="top-icon"
-          onClick={handleHome}
+          onClick={
+            handleHome
+          }
         />
 
       </div>
 
       {/* =================================
-          HEADER
+          LEVEL HEADER
       ================================= */}
 
       <div className="level-header">
@@ -533,13 +735,16 @@ function Level5() {
 
         <div className="mission-box">
 
-          {gameStatus === "playing" &&
+          {gameStatus ===
+            "playing" &&
             "Catch the thief (0/1)"}
 
-          {gameStatus === "cleared" &&
+          {gameStatus ===
+            "cleared" &&
             "LEVEL CLEARED"}
 
-          {gameStatus === "failed" &&
+          {gameStatus ===
+            "failed" &&
             "LEVEL FAILED"}
 
         </div>
@@ -547,7 +752,7 @@ function Level5() {
       </div>
 
       {/* =================================
-          BOARD
+          GAME BOARD
       ================================= */}
 
       <div className="board-area">
@@ -562,13 +767,24 @@ function Level5() {
           height="100%"
         >
           {connections.map(
-            ([from, to], index) => (
+            (
+              [from, to],
+              index
+            ) => (
               <line
                 key={index}
-                x1={nodes[from].x}
-                y1={nodes[from].y}
-                x2={nodes[to].x}
-                y2={nodes[to].y}
+                x1={
+                  nodes[from].x
+                }
+                y1={
+                  nodes[from].y
+                }
+                x2={
+                  nodes[to].x
+                }
+                y2={
+                  nodes[to].y
+                }
               />
             )
           )}
@@ -578,7 +794,9 @@ function Level5() {
             NODES
         ================================= */}
 
-        {Object.entries(nodes).map(
+        {Object.entries(
+          nodes
+        ).map(
           ([key, pos]) => {
 
             const validMoves =
@@ -592,7 +810,9 @@ function Level5() {
               <div
                 key={key}
                 onClick={() =>
-                  handleNodeClick(key)
+                  handleNodeClick(
+                    key
+                  )
                 }
                 className={`
                   node
@@ -614,8 +834,10 @@ function Level5() {
                   }
                 `}
                 style={{
-                  left: `${pos.x}px`,
-                  top: `${pos.y}px`,
+                  left:
+                    `${pos.x}px`,
+                  top:
+                    `${pos.y}px`,
                 }}
               />
             );
@@ -630,9 +852,14 @@ function Level5() {
           className="thief-token"
           style={{
             left:
-              `${nodes[thiefPosition].x}px`,
+              `${nodes[
+                thiefPosition
+              ].x}px`,
+
             top:
-              `${nodes[thiefPosition].y}px`,
+              `${nodes[
+                thiefPosition
+              ].y}px`,
           }}
         >
           T
@@ -653,7 +880,8 @@ function Level5() {
                 police-token
 
                 ${
-                  selectedPolice === key
+                  selectedPolice ===
+                  key
                     ? "selected-police"
                     : ""
                 }
@@ -665,9 +893,14 @@ function Level5() {
               }
               style={{
                 left:
-                  `${nodes[node].x}px`,
+                  `${nodes[
+                    node
+                  ].x}px`,
+
                 top:
-                  `${nodes[node].y}px`,
+                  `${nodes[
+                    node
+                  ].y}px`,
               }}
             >
               P
@@ -677,33 +910,60 @@ function Level5() {
         )}
 
         {/* =================================
+            AI STATUS
+        ================================= */}
+
+        {turnInProgress &&
+          gameStatus ===
+            "playing" && (
+            <div className="ai-status">
+              Thief is thinking...
+            </div>
+          )}
+
+        {/* =================================
             RESULT POPUP
         ================================= */}
 
-        {gameStatus !== "playing" && (
+        {gameStatus !==
+          "playing" && (
 
           <div className="game-result-overlay">
 
             <div className="game-result">
 
+              {/* RESULT TITLE */}
+
               <h2>
-                {gameStatus === "cleared"
-                  ? "LEVEL CLEARED"
-                  : "LEVEL FAILED"}
+                {
+                  gameStatus ===
+                  "cleared"
+                    ? "LEVEL CLEARED"
+                    : "LEVEL FAILED"
+                }
               </h2>
 
+              {/* RESULT MESSAGE */}
+
               <p>
-                {gameStatus === "cleared"
-                  ? "The police trapped the thief."
-                  : "The thief reached the exit."}
+                {
+                  gameStatus ===
+                  "cleared"
+                    ? "The police trapped the thief."
+                    : "The thief reached the exit."
+                }
               </p>
+
+              {/* BUTTONS */}
 
               <div className="result-buttons">
 
                 {/* RETRY */}
 
                 <button
-                  onClick={handleRetry}
+                  onClick={
+                    handleRetry
+                  }
                   className="retry-btn"
                 >
                   Retry
@@ -711,16 +971,21 @@ function Level5() {
 
                 {/* CONTINUE */}
 
-                {gameStatus === "cleared" && (
+                {
+                  gameStatus ===
+                    "cleared" && (
 
-                  <button
-                    onClick={handleContinue}
-                    className="continue-btn"
-                  >
-                    Continue
-                  </button>
+                    <button
+                      onClick={
+                        handleContinue
+                      }
+                      className="continue-btn"
+                    >
+                      Continue
+                    </button>
 
-                )}
+                  )
+                }
 
               </div>
 
