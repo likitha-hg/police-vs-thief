@@ -1,4 +1,3 @@
-
 import "../styles/Level6.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -917,48 +916,28 @@ function Level6() {
 
             <div className="game-result">
 
-              {/* RESULT TITLE */}
+              {gameStatus ===
+              "cleared" ? (
+                <>
+                  <h2>
+                    LEVEL CLEARED
+                  </h2>
 
-              <h2>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"
-                }
-              </h2>
+                  <p>
+                    The police trapped
+                    the thief.
+                  </p>
 
-              {/* RESULT MESSAGE */}
+                  <div className="result-buttons">
 
-              <p>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "The police trapped the thief."
-                    : "The thief reached the exit."
-                }
-              </p>
-
-              {/* RESULT BUTTONS */}
-
-              <div className="result-buttons">
-
-                {/* RETRY */}
-
-                <button
-                  onClick={
-                    handleRetry
-                  }
-                  className="retry-btn"
-                >
-                  Retry
-                </button>
-
-                {/* CONTINUE */}
-
-                {
-                  gameStatus ===
-                    "cleared" && (
+                    <button
+                      onClick={
+                        handleRetry
+                      }
+                      className="retry-btn"
+                    >
+                      RETRY
+                    </button>
 
                     <button
                       onClick={
@@ -966,13 +945,36 @@ function Level6() {
                       }
                       className="continue-btn"
                     >
-                      Continue
+                      CONTINUE
                     </button>
 
-                  )
-                }
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2>
+                    LEVEL FAILED
+                  </h2>
 
-              </div>
+                  <p>
+                    The thief reached
+                    the exit.
+                  </p>
+
+                  <div className="result-buttons">
+
+                    <button
+                      onClick={
+                        handleRetry
+                      }
+                      className="retry-btn"
+                    >
+                      RETRY
+                    </button>
+
+                  </div>
+                </>
+              )}
 
             </div>
 

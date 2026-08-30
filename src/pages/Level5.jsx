@@ -13,16 +13,16 @@ import { useMusic } from "../context/MusicContext";
 function Level5() {
   const navigate = useNavigate();
 
+  // =====================================
+  // MUSIC
+  // =====================================
+
   const {
     isMuted,
     toggleMute,
     playMusic,
     levelMusic,
   } = useMusic();
-
-  // =====================================
-  // PLAY LEVEL MUSIC
-  // =====================================
 
   useEffect(() => {
     playMusic(levelMusic);
@@ -135,7 +135,7 @@ function Level5() {
   ];
 
   // =====================================
-  // GAME SETTINGS
+  // LEVEL RULES
   // =====================================
 
   const EXIT_NODES = ["M", "Q"];
@@ -165,24 +165,25 @@ function Level5() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
-  // Prevent multiple actions while PPO is thinking
+  // Prevent actions while AI is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
-  // UNLOCK NEXT LEVEL
+  // UNLOCK LEVEL 6
   // =====================================
 
   const unlockNextLevel = () => {
-    const currentUnlocked =
-      Number(
-        localStorage.getItem("unlockedLevel") || 1
-      );
+    const savedLevel = Number(
+      localStorage.getItem("unlockedLevel") || 1
+    );
 
-    if (currentUnlocked < 6) {
+    if (savedLevel < 6) {
       localStorage.setItem(
         "unlockedLevel",
         "6"
       );
+
+      console.log("Unlocked Level 6");
     }
   };
 
@@ -198,7 +199,10 @@ function Level5() {
     const currentNode =
       currentPolicePositions[policeKey];
 
-    if (!graph[currentNode]) {
+    if (
+      !currentNode ||
+      !graph[currentNode]
+    ) {
       return [];
     }
 
@@ -207,17 +211,14 @@ function Level5() {
         // Police cannot move onto thief
         node !== currentThiefPosition &&
 
-        // Police cannot occupy another police node
-        !Object.entries(currentPolicePositions)
-          .filter(
-            ([key]) =>
-              key !== policeKey
-          )
-          .map(
-            ([, position]) =>
-              position
-          )
-          .includes(node)
+        // Police cannot move onto another police
+        !Object.entries(
+          currentPolicePositions
+        ).some(
+          ([key, position]) =>
+            key !== policeKey &&
+            position === node
+        )
     );
   };
 
@@ -229,7 +230,9 @@ function Level5() {
     currentThiefPosition,
     currentPolicePositions
   ) => {
-    if (!graph[currentThiefPosition]) {
+    if (
+      !graph[currentThiefPosition]
+    ) {
       return [];
     }
 
@@ -248,12 +251,12 @@ function Level5() {
   // =====================================
 
   const isThiefTrapped = (
-    currentThief,
+    currentThiefPosition,
     currentPolicePositions
   ) => {
     const availableMoves =
       getThiefAvailableMoves(
-        currentThief,
+        currentThiefPosition,
         currentPolicePositions
       );
 
@@ -294,7 +297,7 @@ function Level5() {
 
     try {
       // =================================
-      // REQUEST DATA
+      // REQUEST BODY
       // =================================
 
       const requestBody = {
@@ -315,7 +318,7 @@ function Level5() {
       );
 
       // =================================
-      // CALL FASTAPI
+      // CALL PPO API
       // =================================
 
       const response = await fetch(
@@ -338,10 +341,6 @@ function Level5() {
         "Level 5 PPO response status:",
         response.status
       );
-
-      // =================================
-      // RESPONSE ERROR
-      // =================================
 
       if (!response.ok) {
         throw new Error(
@@ -375,7 +374,7 @@ function Level5() {
       }
 
       // =================================
-      // GET PPO MOVE
+      // PPO MOVE
       // =================================
 
       const nextMove =
@@ -409,7 +408,7 @@ function Level5() {
         validThiefMoves.length === 0
       ) {
         console.log(
-          "Thief has no valid moves."
+          "Level 5 thief has no valid moves."
         );
 
         setGameStatus(
@@ -426,16 +425,17 @@ function Level5() {
       }
 
       // =================================
-      // INVALID PPO MOVE
+      // VALIDATE PPO MOVE
       // =================================
 
       if (
+        !nextMove ||
         !validThiefMoves.includes(
           nextMove
         )
       ) {
         console.error(
-          "Invalid PPO move:",
+          "Invalid Level 5 PPO move:",
           nextMove,
           "Valid moves:",
           validThiefMoves
@@ -449,7 +449,7 @@ function Level5() {
       // =================================
 
       console.log(
-        `Thief moving ${currentThiefPosition} → ${nextMove}`
+        `Level 5 thief moving ${currentThiefPosition} → ${nextMove}`
       );
 
       setThiefPosition(
@@ -466,7 +466,7 @@ function Level5() {
         )
       ) {
         console.log(
-          "Thief reached exit."
+          "Level 5 thief reached exit."
         );
 
         setGameStatus(
@@ -491,7 +491,7 @@ function Level5() {
         )
       ) {
         console.log(
-          "Thief is trapped."
+          "Level 5 thief is trapped."
         );
 
         setGameStatus(
@@ -573,7 +573,7 @@ function Level5() {
     };
 
     console.log(
-      "Police moved:",
+      "Level 5 police moved:",
       updatedPositions
     );
 
@@ -590,7 +590,7 @@ function Level5() {
     );
 
     // =================================
-    // CHECK IF THIEF IS TRAPPED
+    // CHECK POLICE WIN
     // =================================
 
     if (
@@ -600,7 +600,7 @@ function Level5() {
       )
     ) {
       console.log(
-        "Police trapped the thief."
+        "Level 5 police trapped the thief."
       );
 
       setGameStatus(
@@ -691,8 +691,6 @@ function Level5() {
 
       <div className="top-bar">
 
-        {/* SOUND */}
-
         <img
           src={
             isMuted
@@ -710,8 +708,6 @@ function Level5() {
           }
         />
 
-        {/* HOME */}
-
         <img
           src={home}
           alt="home"
@@ -724,7 +720,7 @@ function Level5() {
       </div>
 
       {/* =================================
-          LEVEL HEADER
+          HEADER
       ================================= */}
 
       <div className="level-header">
@@ -752,7 +748,7 @@ function Level5() {
       </div>
 
       {/* =================================
-          GAME BOARD
+          BOARD
       ================================= */}
 
       <div className="board-area">
@@ -836,6 +832,7 @@ function Level5() {
                 style={{
                   left:
                     `${pos.x}px`,
+
                   top:
                     `${pos.y}px`,
                 }}
@@ -893,14 +890,10 @@ function Level5() {
               }
               style={{
                 left:
-                  `${nodes[
-                    node
-                  ].x}px`,
+                  `${nodes[node].x}px`,
 
                 top:
-                  `${nodes[
-                    node
-                  ].y}px`,
+                  `${nodes[node].y}px`,
               }}
             >
               P
@@ -910,7 +903,7 @@ function Level5() {
         )}
 
         {/* =================================
-            AI STATUS
+            AI THINKING
         ================================= */}
 
         {turnInProgress &&
@@ -932,48 +925,32 @@ function Level5() {
 
             <div className="game-result">
 
-              {/* RESULT TITLE */}
+              {/* =========================
+                  LEVEL CLEARED
+              ========================= */}
 
-              <h2>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"
-                }
-              </h2>
+              {gameStatus ===
+              "cleared" ? (
+                <>
+                  <h2>
+                    LEVEL CLEARED
+                  </h2>
 
-              {/* RESULT MESSAGE */}
+                  <p>
+                    The police trapped
+                    the thief.
+                  </p>
 
-              <p>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "The police trapped the thief."
-                    : "The thief reached the exit."
-                }
-              </p>
+                  <div className="result-buttons">
 
-              {/* BUTTONS */}
-
-              <div className="result-buttons">
-
-                {/* RETRY */}
-
-                <button
-                  onClick={
-                    handleRetry
-                  }
-                  className="retry-btn"
-                >
-                  Retry
-                </button>
-
-                {/* CONTINUE */}
-
-                {
-                  gameStatus ===
-                    "cleared" && (
+                    <button
+                      onClick={
+                        handleRetry
+                      }
+                      className="retry-btn"
+                    >
+                      RETRY
+                    </button>
 
                     <button
                       onClick={
@@ -981,13 +958,42 @@ function Level5() {
                       }
                       className="continue-btn"
                     >
-                      Continue
+                      CONTINUE
                     </button>
 
-                  )
-                }
+                  </div>
+                </>
+              ) : (
 
-              </div>
+                /* =========================
+                   LEVEL FAILED
+                ========================= */
+
+                <>
+                  <h2>
+                    LEVEL FAILED
+                  </h2>
+
+                  <p>
+                    The thief reached
+                    the exit.
+                  </p>
+
+                  <div className="result-buttons">
+
+                    <button
+                      onClick={
+                        handleRetry
+                      }
+                      className="retry-btn"
+                    >
+                      RETRY
+                    </button>
+
+                  </div>
+                </>
+
+              )}
 
             </div>
 

@@ -146,7 +146,7 @@ function Level4() {
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
-  // UNLOCK LEVEL 5
+  // UNLOCK NEXT LEVEL
   // =====================================
 
   const unlockNextLevel = () => {
@@ -154,17 +154,13 @@ function Level4() {
       localStorage.getItem("unlockedLevel") || 1
     );
 
-    const nextLevel = 5;
-
-    if (nextLevel > savedLevel) {
+    if (5 > savedLevel) {
       localStorage.setItem(
         "unlockedLevel",
-        String(nextLevel)
+        "5"
       );
 
-      console.log(
-        "Level 5 unlocked"
-      );
+      console.log("Unlocked Level 5");
     }
   };
 
@@ -212,7 +208,6 @@ function Level4() {
     currentPolicePositions
   ) => {
     if (
-      !currentThiefPosition ||
       !graph[currentThiefPosition]
     ) {
       return [];
@@ -242,9 +237,7 @@ function Level4() {
         currentPolicePositions
       );
 
-    return (
-      availableMoves.length === 0
-    );
+    return availableMoves.length === 0;
   };
 
   // =====================================
@@ -274,7 +267,6 @@ function Level4() {
   // =====================================
 
   const moveThief = async (
-    currentThiefPosition,
     updatedPolicePositions
   ) => {
     setTurnInProgress(true);
@@ -288,7 +280,7 @@ function Level4() {
         level: 4,
 
         thief:
-          currentThiefPosition,
+          thiefPosition,
 
         police:
           Object.values(
@@ -326,10 +318,6 @@ function Level4() {
         response.status
       );
 
-      // =================================
-      // RESPONSE ERROR
-      // =================================
-
       if (!response.ok) {
         throw new Error(
           `Prediction request failed: ${response.status}`
@@ -337,7 +325,7 @@ function Level4() {
       }
 
       // =================================
-      // RESPONSE DATA
+      // READ RESPONSE
       // =================================
 
       const data =
@@ -379,7 +367,7 @@ function Level4() {
 
       const validThiefMoves =
         getThiefAvailableMoves(
-          currentThiefPosition,
+          thiefPosition,
           updatedPolicePositions
         );
 
@@ -389,14 +377,14 @@ function Level4() {
       );
 
       // =================================
-      // NO AVAILABLE MOVES
+      // NO VALID MOVES
       // =================================
 
       if (
         validThiefMoves.length === 0
       ) {
         console.log(
-          "Level 4 thief is trapped."
+          "Level 4 thief has no valid moves."
         );
 
         setGameStatus(
@@ -437,7 +425,7 @@ function Level4() {
       // =================================
 
       console.log(
-        `Level 4 thief moving ${currentThiefPosition} → ${nextMove}`
+        `Level 4 thief moving ${thiefPosition} → ${nextMove}`
       );
 
       setThiefPosition(
@@ -551,7 +539,7 @@ function Level4() {
     }
 
     // =================================
-    // UPDATED POLICE POSITIONS
+    // UPDATED POSITIONS
     // =================================
 
     const updatedPositions = {
@@ -606,7 +594,6 @@ function Level4() {
     // =================================
 
     await moveThief(
-      thiefPosition,
       updatedPositions
     );
   };
@@ -680,8 +667,6 @@ function Level4() {
 
       <div className="top-bar">
 
-        {/* SOUND */}
-
         <img
           src={
             isMuted
@@ -698,8 +683,6 @@ function Level4() {
             toggleMute
           }
         />
-
-        {/* HOME */}
 
         <img
           src={home}
@@ -755,7 +738,6 @@ function Level4() {
           width="100%"
           height="100%"
         >
-
           {connections.map(
             (
               [from, to],
@@ -778,7 +760,6 @@ function Level4() {
               />
             )
           )}
-
         </svg>
 
         {/* =================================
@@ -898,7 +879,7 @@ function Level4() {
         )}
 
         {/* =================================
-            PPO THINKING
+            AI STATUS
         ================================= */}
 
         {turnInProgress &&
@@ -922,76 +903,54 @@ function Level4() {
 
             <div className="game-result">
 
-              {/* ============================
-                  LEVEL CLEARED
-              ============================ */}
+              <h2>
+                {
+                  gameStatus ===
+                  "cleared"
+                    ? "LEVEL CLEARED"
+                    : "LEVEL FAILED"
+                }
+              </h2>
 
-              {gameStatus ===
-              "cleared" ? (
-                <>
-                  <h2>
-                    LEVEL CLEARED
-                  </h2>
+              <p>
+                {
+                  gameStatus ===
+                  "cleared"
+                    ? "The police trapped the thief."
+                    : "The thief reached the exit."
+                }
+              </p>
 
-                  <p>
-                    The police trapped
-                    the thief.
-                  </p>
+              <div className="result-buttons">
 
-                  <div className="result-buttons">
+                {/* RETRY */}
 
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
+                <button
+                  onClick={
+                    handleRetry
+                  }
+                  className="retry-btn"
+                >
+                  RETRY
+                </button>
 
-                    <button
-                      onClick={
-                        handleContinue
-                      }
-                      className="continue-btn"
-                    >
-                      CONTINUE
-                    </button>
+                {/* CONTINUE */}
 
-                  </div>
-                </>
+                {gameStatus ===
+                  "cleared" && (
 
-              ) : (
+                  <button
+                    onClick={
+                      handleContinue
+                    }
+                    className="continue-btn"
+                  >
+                    CONTINUE
+                  </button>
 
-                /* ============================
-                   LEVEL FAILED
-                ============================ */
+                )}
 
-                <>
-                  <h2>
-                    LEVEL FAILED
-                  </h2>
-
-                  <p>
-                    The thief reached
-                    the exit.
-                  </p>
-
-                  <div className="result-buttons">
-
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
-
-                  </div>
-                </>
-
-              )}
+              </div>
 
             </div>
 
