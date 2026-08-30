@@ -12,6 +12,10 @@ import { useMusic } from "../context/MusicContext";
 function Level3() {
   const navigate = useNavigate();
 
+  // =====================================
+  // MUSIC
+  // =====================================
+
   const {
     isMuted,
     toggleMute,
@@ -19,14 +23,10 @@ function Level3() {
     levelMusic,
   } = useMusic();
 
-  // =====================================
-  // PLAY LEVEL MUSIC
-  // =====================================
-
   useEffect(() => {
     playMusic(levelMusic);
   }, [playMusic, levelMusic]);
-  
+
   // =====================================
   // NODES
   // =====================================
@@ -101,38 +101,51 @@ function Level3() {
   // INITIAL POSITIONS
   // =====================================
 
-  const INITIAL_POLICE = {
+  const INITIAL_POLICE_POSITIONS = {
     police1: "A",
     police2: "B",
     police3: "C",
   };
 
-  const INITIAL_THIEF = "G";
+  const INITIAL_THIEF_POSITION = "G";
 
   // =====================================
   // GAME STATE
   // =====================================
 
-  const [policePositions, setPolicePositions] =
-    useState(INITIAL_POLICE);
+  const [policePositions, setPolicePositions] = useState(
+    INITIAL_POLICE_POSITIONS
+  );
 
-  const [thiefPosition, setThiefPosition] =
-    useState(INITIAL_THIEF);
+  const [thiefPosition, setThiefPosition] = useState(
+    INITIAL_THIEF_POSITION
+  );
 
-  const [selectedPolice, setSelectedPolice] =
-    useState(null);
+  const [selectedPolice, setSelectedPolice] = useState(null);
 
-  /*
-    playing
-    cleared
-    failed
-  */
+  const [gameStatus, setGameStatus] = useState("playing");
 
-  const [gameStatus, setGameStatus] =
-    useState("playing");
+  // Prevent multiple police moves while PPO is thinking
+  const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
-  // VALID POLICE MOVES
+  // UNLOCK NEXT LEVEL
+  // =====================================
+
+  const unlockNextLevel = () => {
+    const savedLevel = Number(
+      localStorage.getItem("unlockedLevel") || 1
+    );
+
+    if (4 > savedLevel) {
+      localStorage.setItem("unlockedLevel", "4");
+
+      console.log("Unlocked Level 4");
+    }
+  };
+
+  // =====================================
+  // GET VALID POLICE MOVES
   // =====================================
 
   const getValidMoves = (
@@ -142,15 +155,39 @@ function Level3() {
     const currentNode =
       currentPolicePositions[policeKey];
 
+    if (!currentNode || !graph[currentNode]) {
+      return [];
+    }
+
     return graph[currentNode].filter(
       (node) =>
         // Police cannot move onto thief
         node !== thiefPosition &&
 
-        // Police cannot occupy another police
-        !Object.values(
-          currentPolicePositions
-        ).includes(node)
+        // Police cannot move onto another police
+        !Object.entries(currentPolicePositions).some(
+          ([key, position]) =>
+            key !== policeKey &&
+            position === node
+        )
+    );
+  };
+
+  // =====================================
+  // GET THIEF AVAILABLE MOVES
+  // =====================================
+
+  const getThiefAvailableMoves = (
+    currentThiefPosition,
+    currentPolicePositions
+  ) => {
+    if (!graph[currentThiefPosition]) {
+      return [];
+    }
+
+    return graph[currentThiefPosition].filter(
+      (node) =>
+        !Object.values(currentPolicePositions).includes(node)
     );
   };
 
@@ -159,16 +196,13 @@ function Level3() {
   // =====================================
 
   const isThiefTrapped = (
-    currentThief,
+    currentThiefPosition,
     currentPolicePositions
   ) => {
-    const availableMoves =
-      graph[currentThief].filter(
-        (node) =>
-          !Object.values(
-            currentPolicePositions
-          ).includes(node)
-      );
+    const availableMoves = getThiefAvailableMoves(
+      currentThiefPosition,
+      currentPolicePositions
+    );
 
     return availableMoves.length === 0;
   };
@@ -182,6 +216,10 @@ function Level3() {
       return;
     }
 
+    if (turnInProgress) {
+      return;
+    }
+
     setSelectedPolice(policeKey);
   };
 
@@ -189,10 +227,18 @@ function Level3() {
   // PPO THIEF MOVE
   // =====================================
 
-  const moveThief = async (
-    updatedPolicePositions
-  ) => {
+  const moveThief = async (updatedPolicePositions) => {
+    setTurnInProgress(true);
+
     try {
+      const requestBody = {
+        level: 3,
+        thief: thiefPosition,
+        police: Object.values(updatedPolicePositions),
+      };
+
+      console.log("Sending Level 3 PPO request:", requestBody);
+
       const response = await fetch(
         `${API_URL}/predict`,
         {
@@ -202,25 +248,24 @@ function Level3() {
             "Content-Type": "application/json",
           },
 
-          body: JSON.stringify({
-            level: 3,
-            thief: thiefPosition,
-            police: Object.values(
-              updatedPolicePositions
-            ),
-          }),
+          body: JSON.stringify(requestBody),
         }
+      );
+
+      console.log(
+        "Level 3 PPO response status:",
+        response.status
       );
 
       if (!response.ok) {
         throw new Error(
-          "Prediction request failed"
+          `Prediction request failed: ${response.status}`
         );
       }
 
       const data = await response.json();
 
-      console.log("Level 3 AI:", data);
+      console.log("Level 3 PPO response:", data);
 
       // =================================
       // API ERROR
@@ -228,7 +273,7 @@ function Level3() {
 
       if (data.error) {
         console.error(
-          "PPO API error:",
+          "Level 3 PPO API error:",
           data.error
         );
 
@@ -237,31 +282,55 @@ function Level3() {
 
       const nextMove = data.next_move;
 
+      console.log(
+        "Level 3 PPO selected move:",
+        nextMove
+      );
+
       // =================================
-      // VALID THIEF MOVES
+      // GET VALID THIEF MOVES
       // =================================
 
       const validThiefMoves =
-        graph[thiefPosition].filter(
-          (node) =>
-            !Object.values(
-              updatedPolicePositions
-            ).includes(node)
+        getThiefAvailableMoves(
+          thiefPosition,
+          updatedPolicePositions
         );
 
+      console.log(
+        "Level 3 valid thief moves:",
+        validThiefMoves
+      );
+
       // =================================
-      // VALIDATE PPO MOVE
+      // NO AVAILABLE MOVES
+      // =================================
+
+      if (validThiefMoves.length === 0) {
+        console.log(
+          "Level 3 thief has no valid moves."
+        );
+
+        setGameStatus("cleared");
+        setSelectedPolice(null);
+
+        unlockNextLevel();
+
+        return;
+      }
+
+      // =================================
+      // INVALID PPO MOVE
       // =================================
 
       if (
-        !validThiefMoves.includes(
-          nextMove
-        )
+        !nextMove ||
+        !validThiefMoves.includes(nextMove)
       ) {
         console.error(
-          "Invalid PPO move:",
+          "Invalid Level 3 PPO move:",
           nextMove,
-          "Valid:",
+          "Valid moves:",
           validThiefMoves
         );
 
@@ -272,15 +341,21 @@ function Level3() {
       // MOVE THIEF
       // =================================
 
+      console.log(
+        `Level 3 thief moving ${thiefPosition} → ${nextMove}`
+      );
+
       setThiefPosition(nextMove);
 
       // =================================
       // THIEF REACHED EXIT
       // =================================
 
-      if (
-        EXIT_NODES.includes(nextMove)
-      ) {
+      if (EXIT_NODES.includes(nextMove)) {
+        console.log(
+          "Level 3 thief reached exit."
+        );
+
         setGameStatus("failed");
         setSelectedPolice(null);
 
@@ -288,7 +363,7 @@ function Level3() {
       }
 
       // =================================
-      // CHECK TRAP
+      // CHECK IF THIEF IS TRAPPED
       // =================================
 
       if (
@@ -297,14 +372,23 @@ function Level3() {
           updatedPolicePositions
         )
       ) {
+        console.log(
+          "Level 3 thief is trapped."
+        );
+
         setGameStatus("cleared");
         setSelectedPolice(null);
+
+        unlockNextLevel();
       }
+
     } catch (error) {
       console.error(
-        "Level 3 thief move error:",
+        "Level 3 thief movement error:",
         error
       );
+    } finally {
+      setTurnInProgress(false);
     }
   };
 
@@ -313,15 +397,19 @@ function Level3() {
   // =====================================
 
   const handleNodeClick = async (nodeKey) => {
-    if (
-      !selectedPolice ||
-      gameStatus !== "playing"
-    ) {
+    if (!selectedPolice) {
       return;
     }
 
-    const validMoves =
-      getValidMoves(selectedPolice);
+    if (gameStatus !== "playing") {
+      return;
+    }
+
+    if (turnInProgress) {
+      return;
+    }
+
+    const validMoves = getValidMoves(selectedPolice);
 
     // =================================
     // INVALID MOVE
@@ -332,7 +420,7 @@ function Level3() {
     }
 
     // =================================
-    // UPDATE POLICE POSITIONS
+    // UPDATED POLICE POSITIONS
     // =================================
 
     const updatedPositions = {
@@ -340,14 +428,21 @@ function Level3() {
       [selectedPolice]: nodeKey,
     };
 
-    setPolicePositions(
+    console.log(
+      "Level 3 police moved:",
       updatedPositions
     );
+
+    // =================================
+    // UPDATE POLICE
+    // =================================
+
+    setPolicePositions(updatedPositions);
 
     setSelectedPolice(null);
 
     // =================================
-    // CHECK POLICE WIN
+    // CHECK IF THIEF IS TRAPPED
     // =================================
 
     if (
@@ -356,74 +451,56 @@ function Level3() {
         updatedPositions
       )
     ) {
+      console.log(
+        "Level 3 police trapped the thief."
+      );
+
       setGameStatus("cleared");
 
-      // Unlock Level 4
       unlockNextLevel();
 
       return;
     }
 
     // =================================
-    // THIEF TURN
+    // THIEF GETS TURN
     // =================================
 
-    await moveThief(
-      updatedPositions
-    );
+    await moveThief(updatedPositions);
   };
 
   // =====================================
-  // UNLOCK NEXT LEVEL
-  // =====================================
-
-  const unlockNextLevel = () => {
-    const savedLevel =
-      localStorage.getItem(
-        "unlockedLevel"
-      );
-
-    const currentUnlockedLevel =
-      savedLevel
-        ? Number(savedLevel)
-        : 1;
-
-    if (currentUnlockedLevel < 4) {
-      localStorage.setItem(
-        "unlockedLevel",
-        "4"
-      );
-    }
-  };
-
-  // =====================================
-  // CONTINUE
+  // CONTINUE TO LEVEL 4
   // =====================================
 
   const handleContinue = () => {
-    // Make sure Level 4 is unlocked
     unlockNextLevel();
 
-    // Go to Level 4
     navigate("/level4");
   };
 
   // =====================================
-  // RETRY
+  // RETRY LEVEL
   // =====================================
 
   const handleRetry = () => {
     setPolicePositions({
-      ...INITIAL_POLICE,
+      ...INITIAL_POLICE_POSITIONS,
     });
 
     setThiefPosition(
-      INITIAL_THIEF
+      INITIAL_THIEF_POSITION
     );
 
     setSelectedPolice(null);
 
     setGameStatus("playing");
+
+    setTurnInProgress(false);
+
+    console.log(
+      "Level 3 restarted."
+    );
   };
 
   // =====================================
@@ -445,9 +522,10 @@ function Level3() {
           TOP BAR
       ================================= */}
 
-       <div className="top-bar">
+      <div className="top-bar">
 
         {/* SOUND */}
+
         <img
           src={isMuted ? soundOff : soundOn}
           alt={isMuted ? "sound off" : "sound on"}
@@ -456,6 +534,7 @@ function Level3() {
         />
 
         {/* HOME */}
+
         <img
           src={home}
           alt="home"
@@ -505,7 +584,6 @@ function Level3() {
           width="100%"
           height="100%"
         >
-
           {connections.map(
             ([from, to], index) => (
               <line
@@ -517,7 +595,6 @@ function Level3() {
               />
             )
           )}
-
         </svg>
 
         {/* =================================
@@ -529,9 +606,7 @@ function Level3() {
 
             const validMoves =
               selectedPolice
-                ? getValidMoves(
-                    selectedPolice
-                  )
+                ? getValidMoves(selectedPolice)
                 : [];
 
             return (
@@ -571,10 +646,8 @@ function Level3() {
         <div
           className="thief-token"
           style={{
-            left:
-              `${nodes[thiefPosition].x}px`,
-            top:
-              `${nodes[thiefPosition].y}px`,
+            left: `${nodes[thiefPosition].x}px`,
+            top: `${nodes[thiefPosition].y}px`,
           }}
         >
           T
@@ -603,16 +676,25 @@ function Level3() {
                 handlePoliceClick(key)
               }
               style={{
-                left:
-                  `${nodes[node].x}px`,
-                top:
-                  `${nodes[node].y}px`,
+                left: `${nodes[node].x}px`,
+                top: `${nodes[node].y}px`,
               }}
             >
               P
             </div>
           )
         )}
+
+        {/* =================================
+            AI STATUS
+        ================================= */}
+
+        {turnInProgress &&
+          gameStatus === "playing" && (
+            <div className="ai-status">
+              Thief is thinking...
+            </div>
+          )}
 
         {/* =================================
             RESULT POPUP
@@ -640,7 +722,7 @@ function Level3() {
                   : "The thief reached the exit."}
               </p>
 
-              {/* RESULT BUTTONS */}
+              {/* BUTTONS */}
 
               <div className="result-buttons">
 

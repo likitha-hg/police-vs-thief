@@ -1,3 +1,4 @@
+
 import "../styles/Level6.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,7 @@ import soundOff from "../assets/images/sound_off.png";
 import home from "../assets/images/home.png";
 
 import { useMusic } from "../context/MusicContext";
+
 function Level6() {
   const navigate = useNavigate();
 
@@ -25,6 +27,7 @@ function Level6() {
   useEffect(() => {
     playMusic(levelMusic);
   }, [playMusic, levelMusic]);
+
   // =====================================
   // NODES
   // =====================================
@@ -147,9 +150,10 @@ function Level6() {
         node !== thiefPosition &&
 
         // Police cannot occupy another police
-        !Object.values(
-          currentPolicePositions
-        ).includes(node)
+        !Object.entries(currentPolicePositions)
+          .filter(([key]) => key !== policeKey)
+          .map(([, position]) => position)
+          .includes(node)
     );
   };
 
@@ -161,18 +165,34 @@ function Level6() {
     currentThief,
     currentPolicePositions
   ) => {
-    const thiefMoves =
-      graph[currentThief];
+    const thiefMoves = graph[currentThief];
 
-    const availableMoves =
-      thiefMoves.filter(
-        (node) =>
-          !Object.values(
-            currentPolicePositions
-          ).includes(node)
-      );
+    const availableMoves = thiefMoves.filter(
+      (node) =>
+        !Object.values(
+          currentPolicePositions
+        ).includes(node)
+    );
 
     return availableMoves.length === 0;
+  };
+
+  // =====================================
+  // UNLOCK NEXT LEVEL
+  // =====================================
+
+  const unlockNextLevel = () => {
+    const currentUnlocked =
+      Number(
+        localStorage.getItem("unlockedLevel") || 1
+      );
+
+    if (currentUnlocked < 7) {
+      localStorage.setItem(
+        "unlockedLevel",
+        "7"
+      );
+    }
   };
 
   // =====================================
@@ -207,10 +227,9 @@ function Level6() {
           body: JSON.stringify({
             level: 6,
             thief: thiefPosition,
-            police:
-              Object.values(
-                updatedPolicePositions
-              ),
+            police: Object.values(
+              updatedPolicePositions
+            ),
           }),
         }
       );
@@ -221,8 +240,7 @@ function Level6() {
         );
       }
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       console.log(
         "Level 6 AI:",
@@ -242,8 +260,7 @@ function Level6() {
         return;
       }
 
-      const nextMove =
-        data.next_move;
+      const nextMove = data.next_move;
 
       // =================================
       // VALID THIEF MOVES
@@ -280,18 +297,14 @@ function Level6() {
       // MOVE THIEF
       // =================================
 
-      setThiefPosition(
-        nextMove
-      );
+      setThiefPosition(nextMove);
 
       // =================================
       // THIEF REACHED EXIT
       // =================================
 
       if (
-        EXIT_NODES.includes(
-          nextMove
-        )
+        EXIT_NODES.includes(nextMove)
       ) {
         setGameStatus("failed");
         setSelectedPolice(null);
@@ -311,6 +324,9 @@ function Level6() {
       ) {
         setGameStatus("cleared");
         setSelectedPolice(null);
+
+        // Unlock Level 7
+        unlockNextLevel();
 
         return;
       }
@@ -348,9 +364,7 @@ function Level6() {
     // =================================
 
     if (
-      !validMoves.includes(
-        nodeKey
-      )
+      !validMoves.includes(nodeKey)
     ) {
       return;
     }
@@ -388,6 +402,9 @@ function Level6() {
     ) {
       setGameStatus("cleared");
 
+      // Unlock Level 7
+      unlockNextLevel();
+
       return;
     }
 
@@ -423,6 +440,8 @@ function Level6() {
   // =====================================
 
   const handleContinue = () => {
+    unlockNextLevel();
+
     navigate("/level7");
   };
 
@@ -449,10 +468,14 @@ function Level6() {
 
         {/* SOUND */}
         <img
-         src={isMuted ? soundOff : soundOn}
-         alt={isMuted ? "sound off" : "sound on"}
-         className="top-icon"
-         onClick={toggleMute}
+          src={isMuted ? soundOff : soundOn}
+          alt={
+            isMuted
+              ? "sound off"
+              : "sound on"
+          }
+          className="top-icon"
+          onClick={toggleMute}
         />
 
         {/* HOME */}
@@ -464,6 +487,7 @@ function Level6() {
         />
 
       </div>
+
       {/* =================================
           HEADER
       ================================= */}
@@ -510,10 +534,8 @@ function Level6() {
 
               <line
                 key={index}
-
                 x1={nodes[from].x}
                 y1={nodes[from].y}
-
                 x2={nodes[to].x}
                 y2={nodes[to].y}
               />
@@ -540,13 +562,9 @@ function Level6() {
             return (
               <div
                 key={key}
-
                 onClick={() =>
-                  handleNodeClick(
-                    key
-                  )
+                  handleNodeClick(key)
                 }
-
                 className={`
                   node
 
@@ -566,7 +584,6 @@ function Level6() {
                       : ""
                   }
                 `}
-
                 style={{
                   left: `${pos.x}px`,
                   top: `${pos.y}px`,
@@ -582,17 +599,12 @@ function Level6() {
 
         <div
           className="thief-token"
-
           style={{
             left:
-              `${nodes[
-                thiefPosition
-              ].x}px`,
+              `${nodes[thiefPosition].x}px`,
 
             top:
-              `${nodes[
-                thiefPosition
-              ].y}px`,
+              `${nodes[thiefPosition].y}px`,
           }}
         >
           T
@@ -609,7 +621,6 @@ function Level6() {
 
             <div
               key={key}
-
               className={`
                 police-token
 
@@ -619,23 +630,17 @@ function Level6() {
                     : ""
                 }
               `}
-
               onClick={() =>
                 handlePoliceClick(
                   key
                 )
               }
-
               style={{
                 left:
-                  `${nodes[
-                    node
-                  ].x}px`,
+                  `${nodes[node].x}px`,
 
                 top:
-                  `${nodes[
-                    node
-                  ].y}px`,
+                  `${nodes[node].y}px`,
               }}
             >
               P
@@ -671,9 +676,7 @@ function Level6() {
                 {/* RETRY */}
 
                 <button
-                  onClick={
-                    handleRetry
-                  }
+                  onClick={handleRetry}
                   className="retry-btn"
                 >
                   Retry

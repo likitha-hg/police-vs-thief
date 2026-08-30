@@ -1,3 +1,4 @@
+
 import "../styles/Level5.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +27,7 @@ function Level5() {
   useEffect(() => {
     playMusic(levelMusic);
   }, [playMusic, levelMusic]);
-  
+
   // =====================================
   // NODES
   // =====================================
@@ -165,6 +166,24 @@ function Level5() {
   const [gameStatus, setGameStatus] = useState("playing");
 
   // =====================================
+  // UNLOCK NEXT LEVEL
+  // =====================================
+
+  const unlockNextLevel = () => {
+    const currentUnlocked =
+      Number(
+        localStorage.getItem("unlockedLevel") || 1
+      );
+
+    if (currentUnlocked < 6) {
+      localStorage.setItem(
+        "unlockedLevel",
+        "6"
+      );
+    }
+  };
+
+  // =====================================
   // VALID POLICE MOVES
   // =====================================
 
@@ -180,7 +199,7 @@ function Level5() {
         // Police cannot move onto thief
         node !== thiefPosition &&
 
-        // Police cannot occupy another police
+        // Police cannot occupy another police node
         !Object.entries(currentPolicePositions)
           .filter(([key]) => key !== policeKey)
           .map(([, position]) => position)
@@ -196,14 +215,13 @@ function Level5() {
     currentThief,
     currentPolicePositions
   ) => {
-    const thiefMoves = graph[currentThief];
-
-    const availableMoves = thiefMoves.filter(
-      (node) =>
-        !Object.values(
-          currentPolicePositions
-        ).includes(node)
-    );
+    const availableMoves =
+      graph[currentThief].filter(
+        (node) =>
+          !Object.values(
+            currentPolicePositions
+          ).includes(node)
+      );
 
     return availableMoves.length === 0;
   };
@@ -265,7 +283,7 @@ function Level5() {
       // =================================
 
       if (data.error) {
-        console.log(
+        console.error(
           "PPO API error:",
           data.error
         );
@@ -296,10 +314,9 @@ function Level5() {
           nextMove
         )
       ) {
-        console.log(
+        console.error(
           "Invalid PPO move:",
           nextMove,
-
           "Valid moves:",
           validThiefMoves
         );
@@ -340,24 +357,12 @@ function Level5() {
         setSelectedPolice(null);
 
         // Unlock Level 6
-        const currentUnlocked =
-          Number(
-            localStorage.getItem(
-              "unlockedLevel"
-            ) || 1
-          );
-
-        if (currentUnlocked < 6) {
-          localStorage.setItem(
-            "unlockedLevel",
-            "6"
-          );
-        }
+        unlockNextLevel();
 
         return;
       }
     } catch (error) {
-      console.log(
+      console.error(
         "Level 5 thief move error:",
         error
       );
@@ -371,11 +376,10 @@ function Level5() {
   const handleNodeClick = async (
     nodeKey
   ) => {
-    if (!selectedPolice) {
-      return;
-    }
-
-    if (gameStatus !== "playing") {
+    if (
+      !selectedPolice ||
+      gameStatus !== "playing"
+    ) {
       return;
     }
 
@@ -400,9 +404,7 @@ function Level5() {
 
     const updatedPositions = {
       ...policePositions,
-
-      [selectedPolice]:
-        nodeKey,
+      [selectedPolice]: nodeKey,
     };
 
     // =================================
@@ -428,19 +430,7 @@ function Level5() {
       setGameStatus("cleared");
 
       // Unlock Level 6
-      const currentUnlocked =
-        Number(
-          localStorage.getItem(
-            "unlockedLevel"
-          ) || 1
-        );
-
-      if (currentUnlocked < 6) {
-        localStorage.setItem(
-          "unlockedLevel",
-          "6"
-        );
-      }
+      unlockNextLevel();
 
       return;
     }
@@ -478,19 +468,7 @@ function Level5() {
 
   const handleContinue = () => {
     // Make sure Level 6 is unlocked
-    const currentUnlocked =
-      Number(
-        localStorage.getItem(
-          "unlockedLevel"
-        ) || 1
-      );
-
-    if (currentUnlocked < 6) {
-      localStorage.setItem(
-        "unlockedLevel",
-        "6"
-      );
-    }
+    unlockNextLevel();
 
     // Go to Level 6
     navigate("/level6");
@@ -512,15 +490,23 @@ function Level5() {
     <div className="level-board">
 
       {/* =================================
-          TOP BUTTONS
+          TOP BAR
       ================================= */}
 
-       <div className="top-bar">
+      <div className="top-bar">
 
         {/* SOUND */}
         <img
-          src={isMuted ? soundOff : soundOn}
-          alt={isMuted ? "sound off" : "sound on"}
+          src={
+            isMuted
+              ? soundOff
+              : soundOn
+          }
+          alt={
+            isMuted
+              ? "sound off"
+              : "sound on"
+          }
           className="top-icon"
           onClick={toggleMute}
         />
@@ -663,7 +649,6 @@ function Level5() {
 
             <div
               key={key}
-
               className={`
                 police-token
 
@@ -673,13 +658,11 @@ function Level5() {
                     : ""
                 }
               `}
-
               onClick={() =>
                 handlePoliceClick(
                   key
                 )
               }
-
               style={{
                 left:
                   `${nodes[node].x}px`,
@@ -720,9 +703,7 @@ function Level5() {
                 {/* RETRY */}
 
                 <button
-                  onClick={
-                    handleRetry
-                  }
+                  onClick={handleRetry}
                   className="retry-btn"
                 >
                   Retry
@@ -730,13 +711,10 @@ function Level5() {
 
                 {/* CONTINUE */}
 
-                {gameStatus ===
-                  "cleared" && (
+                {gameStatus === "cleared" && (
 
                   <button
-                    onClick={
-                      handleContinue
-                    }
+                    onClick={handleContinue}
                     className="continue-btn"
                   >
                     Continue
