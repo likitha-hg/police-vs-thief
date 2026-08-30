@@ -1,3 +1,4 @@
+
 import "../styles/Level6.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -120,20 +121,20 @@ function Level6() {
   // GAME STATE
   // =====================================
 
-  const [policePositions, setPolicePositions] = useState(
-    INITIAL_POLICE_POSITIONS
-  );
+  const [policePositions, setPolicePositions] =
+    useState(INITIAL_POLICE_POSITIONS);
 
-  const [thiefPosition, setThiefPosition] = useState(
-    INITIAL_THIEF_POSITION
-  );
+  const [thiefPosition, setThiefPosition] =
+    useState(INITIAL_THIEF_POSITION);
 
-  const [selectedPolice, setSelectedPolice] = useState(null);
+  const [selectedPolice, setSelectedPolice] =
+    useState(null);
 
-  const [gameStatus, setGameStatus] = useState("playing");
+  const [gameStatus, setGameStatus] =
+    useState("playing");
 
-  // Prevent multiple actions while PPO is thinking
-  const [turnInProgress, setTurnInProgress] = useState(false);
+  const [turnInProgress, setTurnInProgress] =
+    useState(false);
 
   // =====================================
   // UNLOCK NEXT LEVEL
@@ -485,7 +486,6 @@ function Level6() {
       );
 
     } finally {
-      // AI turn finished
       setTurnInProgress(
         false
       );
@@ -511,8 +511,6 @@ function Level6() {
       return;
     }
 
-    // Do not allow another move
-    // while PPO is thinking
     if (turnInProgress) {
       return;
     }
@@ -797,7 +795,6 @@ function Level6() {
                 }
                 className={`
                   node
-
                   ${
                     EXIT_NODES.includes(
                       key
@@ -805,7 +802,6 @@ function Level6() {
                       ? "exit-node"
                       : ""
                   }
-
                   ${
                     validMoves.includes(
                       key
@@ -817,7 +813,6 @@ function Level6() {
                 style={{
                   left:
                     `${pos.x}px`,
-
                   top:
                     `${pos.y}px`,
                 }}
@@ -860,7 +855,6 @@ function Level6() {
               key={key}
               className={`
                 police-token
-
                 ${
                   selectedPolice ===
                   key
@@ -905,84 +899,97 @@ function Level6() {
 
         )}
 
-        {/* =================================
-            RESULT POPUP
-        ================================= */}
+      </div>
 
-        {gameStatus !==
-          "playing" && (
+      {/* =================================
+          RESULT POPUP
 
-          <div className="game-result-overlay">
+          IMPORTANT:
+          OUTSIDE BOARD-AREA
+      ================================= */}
 
-            <div className="game-result">
+      {gameStatus !==
+        "playing" && (
 
-              {gameStatus ===
-              "cleared" ? (
-                <>
-                  <h2>
-                    LEVEL CLEARED
-                  </h2>
+        <div className="game-result-overlay">
 
-                  <p>
-                    The police trapped
-                    the thief.
-                  </p>
+          <div className="game-result">
 
-                  <div className="result-buttons">
+            {/* =================================
+                LEVEL CLEARED
+            ================================= */}
 
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
+            {gameStatus ===
+            "cleared" ? (
+              <>
+                <h2>
+                  LEVEL CLEARED
+                </h2>
 
-                    <button
-                      onClick={
-                        handleContinue
-                      }
-                      className="continue-btn"
-                    >
-                      CONTINUE
-                    </button>
+                <p>
+                  The police trapped
+                  the thief.
+                </p>
 
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2>
-                    LEVEL FAILED
-                  </h2>
+                <div className="result-buttons">
 
-                  <p>
-                    The thief reached
-                    the exit.
-                  </p>
+                  <button
+                    onClick={
+                      handleRetry
+                    }
+                    className="retry-btn"
+                  >
+                    RETRY
+                  </button>
 
-                  <div className="result-buttons">
+                  <button
+                    onClick={
+                      handleContinue
+                    }
+                    className="continue-btn"
+                  >
+                    CONTINUE
+                  </button>
 
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
+                </div>
+              </>
+            ) : (
 
-                  </div>
-                </>
-              )}
+              /* =================================
+                  LEVEL FAILED
+              ================================= */
 
-            </div>
+              <>
+                <h2>
+                  LEVEL FAILED
+                </h2>
+
+                <p>
+                  The thief reached
+                  the exit.
+                </p>
+
+                <div className="result-buttons">
+
+                  <button
+                    onClick={
+                      handleRetry
+                    }
+                    className="retry-btn"
+                  >
+                    RETRY
+                  </button>
+
+                </div>
+              </>
+
+            )}
 
           </div>
 
-        )}
+        </div>
 
-      </div>
+      )}
 
     </div>
   );

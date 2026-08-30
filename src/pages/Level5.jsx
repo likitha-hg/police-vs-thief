@@ -1,4 +1,3 @@
-
 import "../styles/Level5.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -165,7 +164,6 @@ function Level5() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
-  // Prevent actions while AI is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
@@ -208,10 +206,7 @@ function Level5() {
 
     return graph[currentNode].filter(
       (node) =>
-        // Police cannot move onto thief
         node !== currentThiefPosition &&
-
-        // Police cannot move onto another police
         !Object.entries(
           currentPolicePositions
         ).some(
@@ -342,6 +337,10 @@ function Level5() {
         response.status
       );
 
+      // =================================
+      // RESPONSE ERROR
+      // =================================
+
       if (!response.ok) {
         throw new Error(
           `Prediction request failed: ${response.status}`
@@ -401,7 +400,7 @@ function Level5() {
       );
 
       // =================================
-      // NO VALID MOVES
+      // NO AVAILABLE MOVES
       // =================================
 
       if (
@@ -510,6 +509,7 @@ function Level5() {
         "Level 5 thief movement error:",
         error
       );
+
     } finally {
       setTurnInProgress(
         false
@@ -909,99 +909,102 @@ function Level5() {
         {turnInProgress &&
           gameStatus ===
             "playing" && (
-            <div className="ai-status">
-              Thief is thinking...
-            </div>
-          )}
 
-        {/* =================================
-            RESULT POPUP
-        ================================= */}
-
-        {gameStatus !==
-          "playing" && (
-
-          <div className="game-result-overlay">
-
-            <div className="game-result">
-
-              {/* =========================
-                  LEVEL CLEARED
-              ========================= */}
-
-              {gameStatus ===
-              "cleared" ? (
-                <>
-                  <h2>
-                    LEVEL CLEARED
-                  </h2>
-
-                  <p>
-                    The police trapped
-                    the thief.
-                  </p>
-
-                  <div className="result-buttons">
-
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
-
-                    <button
-                      onClick={
-                        handleContinue
-                      }
-                      className="continue-btn"
-                    >
-                      CONTINUE
-                    </button>
-
-                  </div>
-                </>
-              ) : (
-
-                /* =========================
-                   LEVEL FAILED
-                ========================= */
-
-                <>
-                  <h2>
-                    LEVEL FAILED
-                  </h2>
-
-                  <p>
-                    The thief reached
-                    the exit.
-                  </p>
-
-                  <div className="result-buttons">
-
-                    <button
-                      onClick={
-                        handleRetry
-                      }
-                      className="retry-btn"
-                    >
-                      RETRY
-                    </button>
-
-                  </div>
-                </>
-
-              )}
-
-            </div>
-
+          <div className="ai-status">
+            Thief is thinking...
           </div>
 
         )}
 
       </div>
+
+      {/* =================================
+          RESULT POPUP
+          OUTSIDE BOARD-AREA
+      ================================= */}
+
+      {gameStatus !==
+        "playing" && (
+
+        <div className="game-result-overlay">
+
+          <div className="game-result">
+
+            {/* =========================
+                LEVEL CLEARED
+            ========================= */}
+
+            {gameStatus ===
+            "cleared" ? (
+              <>
+                <h2>
+                  LEVEL CLEARED
+                </h2>
+
+                <p>
+                  The police trapped
+                  the thief.
+                </p>
+
+                <div className="result-buttons">
+
+                  <button
+                    onClick={
+                      handleRetry
+                    }
+                    className="retry-btn"
+                  >
+                    RETRY
+                  </button>
+
+                  <button
+                    onClick={
+                      handleContinue
+                    }
+                    className="continue-btn"
+                  >
+                    CONTINUE
+                  </button>
+
+                </div>
+              </>
+            ) : (
+
+              /* =========================
+                 LEVEL FAILED
+              ========================= */
+
+              <>
+                <h2>
+                  LEVEL FAILED
+                </h2>
+
+                <p>
+                  The thief reached
+                  the exit.
+                </p>
+
+                <div className="result-buttons">
+
+                  <button
+                    onClick={
+                      handleRetry
+                    }
+                    className="retry-btn"
+                  >
+                    RETRY
+                  </button>
+
+                </div>
+              </>
+
+            )}
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );

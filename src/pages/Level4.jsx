@@ -142,7 +142,6 @@ function Level4() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
-  // Prevent multiple actions while PPO is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
@@ -185,10 +184,7 @@ function Level4() {
 
     return graph[currentNode].filter(
       (node) =>
-        // Police cannot move onto thief
         node !== currentThiefPosition &&
-
-        // Police cannot move onto another police
         !Object.entries(
           currentPolicePositions
         ).some(
@@ -272,10 +268,6 @@ function Level4() {
     setTurnInProgress(true);
 
     try {
-      // =================================
-      // REQUEST BODY
-      // =================================
-
       const requestBody = {
         level: 4,
 
@@ -292,10 +284,6 @@ function Level4() {
         "Sending Level 4 PPO request:",
         requestBody
       );
-
-      // =================================
-      // CALL PPO API
-      // =================================
 
       const response = await fetch(
         `${API_URL}/predict`,
@@ -323,10 +311,6 @@ function Level4() {
           `Prediction request failed: ${response.status}`
         );
       }
-
-      // =================================
-      // READ RESPONSE
-      // =================================
 
       const data =
         await response.json();
@@ -667,6 +651,8 @@ function Level4() {
 
       <div className="top-bar">
 
+        {/* SOUND */}
+
         <img
           src={
             isMuted
@@ -683,6 +669,8 @@ function Level4() {
             toggleMute
           }
         />
+
+        {/* HOME */}
 
         <img
           src={home}
@@ -892,73 +880,77 @@ function Level4() {
 
           )}
 
-        {/* =================================
-            RESULT POPUP
-        ================================= */}
+      </div>
 
-        {gameStatus !==
-          "playing" && (
+      {/* =================================
+          RESULT POPUP
+          SAME STRUCTURE AS LEVEL 3
+          OUTSIDE BOARD-AREA
+      ================================= */}
 
-          <div className="game-result-overlay">
+      {gameStatus !==
+        "playing" && (
 
-            <div className="game-result">
+        <div className="game-result-overlay">
 
-              <h2>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"
+          <div className="game-result">
+
+            {/* RESULT TITLE */}
+
+            <h2>
+              {gameStatus ===
+                "cleared"
+                ? "LEVEL CLEARED"
+                : "LEVEL FAILED"}
+            </h2>
+
+            {/* RESULT MESSAGE */}
+
+            <p>
+              {gameStatus ===
+                "cleared"
+                ? "The police trapped the thief."
+                : "The thief reached the exit."}
+            </p>
+
+            {/* BUTTONS */}
+
+            <div className="result-buttons">
+
+              {/* RETRY */}
+
+              <button
+                className="retry-btn"
+                onClick={
+                  handleRetry
                 }
-              </h2>
+              >
+                Retry
+              </button>
 
-              <p>
-                {
-                  gameStatus ===
-                  "cleared"
-                    ? "The police trapped the thief."
-                    : "The thief reached the exit."
-                }
-              </p>
+              {/* CONTINUE */}
 
-              <div className="result-buttons">
-
-                {/* RETRY */}
+              {gameStatus ===
+                "cleared" && (
 
                 <button
+                  className="continue-btn"
                   onClick={
-                    handleRetry
+                    handleContinue
                   }
-                  className="retry-btn"
                 >
-                  RETRY
+                  Continue
                 </button>
 
-                {/* CONTINUE */}
-
-                {gameStatus ===
-                  "cleared" && (
-
-                  <button
-                    onClick={
-                      handleContinue
-                    }
-                    className="continue-btn"
-                  >
-                    CONTINUE
-                  </button>
-
-                )}
-
-              </div>
+              )}
 
             </div>
 
           </div>
 
-        )}
+        </div>
 
-      </div>
+      )}
 
     </div>
   );

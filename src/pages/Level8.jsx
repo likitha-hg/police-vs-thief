@@ -13,16 +13,16 @@ import { useMusic } from "../context/MusicContext";
 function Level8() {
   const navigate = useNavigate();
 
+  // =====================================
+  // MUSIC
+  // =====================================
+
   const {
     isMuted,
     toggleMute,
     playMusic,
     levelMusic,
   } = useMusic();
-
-  // =====================================
-  // PLAY LEVEL MUSIC
-  // =====================================
 
   useEffect(() => {
     playMusic(levelMusic);
@@ -147,7 +147,6 @@ function Level8() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
-  // Prevent police from moving while PPO is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
@@ -194,10 +193,7 @@ function Level8() {
 
     return graph[currentNode].filter(
       (node) =>
-        // Police cannot move onto thief
         node !== currentThiefPosition &&
-
-        // Police cannot occupy another police node
         !Object.entries(
           currentPolicePositions
         ).some(
@@ -223,9 +219,7 @@ function Level8() {
       return [];
     }
 
-    return graph[
-      currentThiefPosition
-    ].filter(
+    return graph[currentThiefPosition].filter(
       (node) =>
         !Object.values(
           currentPolicePositions
@@ -258,18 +252,13 @@ function Level8() {
     policeKey
   ) => {
     if (
-      gameStatus !== "playing"
+      gameStatus !== "playing" ||
+      turnInProgress
     ) {
       return;
     }
 
-    if (turnInProgress) {
-      return;
-    }
-
-    setSelectedPolice(
-      policeKey
-    );
+    setSelectedPolice(policeKey);
   };
 
   // =====================================
@@ -289,10 +278,7 @@ function Level8() {
 
       const requestBody = {
         level: 8,
-
-        thief:
-          currentThiefPosition,
-
+        thief: currentThiefPosition,
         police:
           Object.values(
             updatedPolicePositions
@@ -402,13 +388,8 @@ function Level8() {
           "Level 8 thief is trapped."
         );
 
-        setGameStatus(
-          "cleared"
-        );
-
-        setSelectedPolice(
-          null
-        );
+        setGameStatus("cleared");
+        setSelectedPolice(null);
 
         unlockNextLevel();
 
@@ -443,9 +424,7 @@ function Level8() {
         `Level 8 thief moving ${currentThiefPosition} → ${nextMove}`
       );
 
-      setThiefPosition(
-        nextMove
-      );
+      setThiefPosition(nextMove);
 
       // =================================
       // THIEF REACHED EXIT
@@ -460,13 +439,8 @@ function Level8() {
           "Level 8 thief reached exit."
         );
 
-        setGameStatus(
-          "failed"
-        );
-
-        setSelectedPolice(
-          null
-        );
+        setGameStatus("failed");
+        setSelectedPolice(null);
 
         return;
       }
@@ -485,13 +459,8 @@ function Level8() {
           "Level 8 thief is trapped."
         );
 
-        setGameStatus(
-          "cleared"
-        );
-
-        setSelectedPolice(
-          null
-        );
+        setGameStatus("cleared");
+        setSelectedPolice(null);
 
         unlockNextLevel();
       }
@@ -503,9 +472,7 @@ function Level8() {
       );
 
     } finally {
-      setTurnInProgress(
-        false
-      );
+      setTurnInProgress(false);
     }
   };
 
@@ -517,18 +484,10 @@ function Level8() {
     nodeKey
   ) => {
     if (
-      !selectedPolice
+      !selectedPolice ||
+      gameStatus !== "playing" ||
+      turnInProgress
     ) {
-      return;
-    }
-
-    if (
-      gameStatus !== "playing"
-    ) {
-      return;
-    }
-
-    if (turnInProgress) {
       return;
     }
 
@@ -540,10 +499,6 @@ function Level8() {
       getValidMoves(
         selectedPolice
       );
-
-    // =================================
-    // INVALID MOVE
-    // =================================
 
     if (
       !validMoves.includes(
@@ -577,9 +532,7 @@ function Level8() {
       updatedPositions
     );
 
-    setSelectedPolice(
-      null
-    );
+    setSelectedPolice(null);
 
     // =================================
     // CHECK POLICE WIN
@@ -595,9 +548,7 @@ function Level8() {
         "Level 8 police trapped the thief."
       );
 
-      setGameStatus(
-        "cleared"
-      );
+      setGameStatus("cleared");
 
       unlockNextLevel();
 
@@ -631,17 +582,11 @@ function Level8() {
       INITIAL_THIEF_POSITION
     );
 
-    setSelectedPolice(
-      null
-    );
+    setSelectedPolice(null);
 
-    setGameStatus(
-      "playing"
-    );
+    setGameStatus("playing");
 
-    setTurnInProgress(
-      false
-    );
+    setTurnInProgress(false);
   };
 
   // =====================================
@@ -655,9 +600,7 @@ function Level8() {
 
     unlockNextLevel();
 
-    navigate(
-      "/level9"
-    );
+    navigate("/level9");
   };
 
   // =====================================
@@ -681,8 +624,6 @@ function Level8() {
 
       <div className="top-bar">
 
-        {/* SOUND */}
-
         <img
           src={
             isMuted
@@ -695,20 +636,14 @@ function Level8() {
               : "sound on"
           }
           className="top-icon"
-          onClick={
-            toggleMute
-          }
+          onClick={toggleMute}
         />
-
-        {/* HOME */}
 
         <img
           src={home}
           alt="home"
           className="top-icon"
-          onClick={
-            handleHome
-          }
+          onClick={handleHome}
         />
 
       </div>
@@ -725,16 +660,13 @@ function Level8() {
 
         <div className="mission-box">
 
-          {gameStatus ===
-            "playing" &&
+          {gameStatus === "playing" &&
             "Catch the thief (0/1)"}
 
-          {gameStatus ===
-            "cleared" &&
+          {gameStatus === "cleared" &&
             "LEVEL CLEARED"}
 
-          {gameStatus ===
-            "failed" &&
+          {gameStatus === "failed" &&
             "LEVEL FAILED"}
 
         </div>
@@ -762,6 +694,7 @@ function Level8() {
               [from, to],
               index
             ) => (
+
               <line
                 key={index}
                 x1={
@@ -777,6 +710,7 @@ function Level8() {
                   nodes[to].y
                 }
               />
+
             )
           )}
 
@@ -828,7 +762,6 @@ function Level8() {
                 style={{
                   left:
                     `${pos.x}px`,
-
                   top:
                     `${pos.y}px`,
                 }}
@@ -910,66 +843,66 @@ function Level8() {
           gameStatus ===
             "playing" && (
 
-            <div className="ai-status">
-              Thief is thinking...
-            </div>
+          <div className="ai-status">
+            Thief is thinking...
+          </div>
 
-          )}
+        )}
 
         {/* =================================
             RESULT POPUP
         ================================= */}
 
-        {gameStatus !==
-          "playing" && (
+        {gameStatus !== "playing" && (
 
           <div className="game-result-overlay">
 
             <div className="game-result">
 
+              {/* =================================
+                  RESULT TITLE
+              ================================= */}
+
               <h2>
-
-                {gameStatus ===
-                  "cleared"
-                    ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"}
-
+                {gameStatus === "cleared"
+                  ? "LEVEL CLEARED"
+                  : "LEVEL FAILED"}
               </h2>
 
+              {/* =================================
+                  RESULT MESSAGE
+              ================================= */}
+
               <p>
-
-                {gameStatus ===
-                  "cleared"
-                    ? "The police trapped the thief."
-                    : "The thief reached the exit."}
-
+                {gameStatus === "cleared"
+                  ? "The police trapped the thief."
+                  : "The thief reached the exit."}
               </p>
+
+              {/* =================================
+                  RESULT BUTTONS
+              ================================= */}
 
               <div className="result-buttons">
 
                 {/* RETRY */}
 
                 <button
-                  onClick={
-                    handleRetry
-                  }
+                  onClick={handleRetry}
                   className="retry-btn"
                 >
-                  Retry
+                  RETRY
                 </button>
 
                 {/* CONTINUE */}
 
-                {gameStatus ===
-                  "cleared" && (
+                {gameStatus === "cleared" && (
 
                   <button
-                    onClick={
-                      handleContinue
-                    }
+                    onClick={handleContinue}
                     className="continue-btn"
                   >
-                    Continue
+                    CONTINUE
                   </button>
 
                 )}

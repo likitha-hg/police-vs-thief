@@ -143,8 +143,7 @@ function Level7() {
 
   const [gameStatus, setGameStatus] = useState("playing");
 
-  // Prevent police from making another move
-  // while PPO is thinking
+  // Prevent actions while PPO is thinking
   const [turnInProgress, setTurnInProgress] = useState(false);
 
   // =====================================
@@ -192,7 +191,7 @@ function Level7() {
         // Police cannot move onto thief
         node !== currentThiefPosition &&
 
-        // Police cannot occupy another police
+        // Police cannot move onto another police
         !Object.entries(
           currentPolicePositions
         ).some(
@@ -275,7 +274,6 @@ function Level7() {
     currentThiefPosition,
     updatedPolicePositions
   ) => {
-    // PPO turn starts
     setTurnInProgress(true);
 
     try {
@@ -301,7 +299,7 @@ function Level7() {
       );
 
       // =================================
-      // CALL API
+      // CALL PPO API
       // =================================
 
       const response = await fetch(
@@ -406,7 +404,6 @@ function Level7() {
           null
         );
 
-        // Unlock Level 8
         unlockNextLevel(8);
 
         return;
@@ -490,7 +487,6 @@ function Level7() {
           null
         );
 
-        // Unlock Level 8
         unlockNextLevel(8);
       }
 
@@ -501,8 +497,9 @@ function Level7() {
       );
 
     } finally {
-      // PPO turn finished
-      setTurnInProgress(false);
+      setTurnInProgress(
+        false
+      );
     }
   };
 
@@ -915,73 +912,86 @@ function Level7() {
 
           )}
 
-        {/* =================================
-            RESULT POPUP
-        ================================= */}
+      </div>
 
-        {gameStatus !==
-          "playing" && (
+      {/* =================================
+          RESULT POPUP
+          OUTSIDE BOARD AREA
+      ================================= */}
 
-          <div className="game-result-overlay">
+      {gameStatus !==
+        "playing" && (
 
-            <div className="game-result">
+        <div className="game-result-overlay">
 
-              <h2>
+          <div className="game-result">
 
-                {gameStatus ===
-                  "cleared"
-                    ? "LEVEL CLEARED"
-                    : "LEVEL FAILED"}
+            {/* =================================
+                TITLE
+            ================================= */}
 
-              </h2>
+            <h2>
 
-              <p>
+              {gameStatus ===
+                "cleared"
+                  ? "LEVEL CLEARED"
+                  : "LEVEL FAILED"}
 
-                {gameStatus ===
-                  "cleared"
-                    ? "The police trapped the thief."
-                    : "The thief reached the exit."}
+            </h2>
 
-              </p>
+            {/* =================================
+                MESSAGE
+            ================================= */}
 
-              <div className="result-buttons">
+            <p>
 
-                {/* RETRY */}
+              {gameStatus ===
+                "cleared"
+                  ? "The police trapped the thief."
+                  : "The thief reached the exit."}
+
+            </p>
+
+            {/* =================================
+                BUTTONS
+            ================================= */}
+
+            <div className="result-buttons">
+
+              {/* RETRY */}
+
+              <button
+                onClick={
+                  handleRetry
+                }
+                className="retry-btn"
+              >
+                RETRY
+              </button>
+
+              {/* CONTINUE */}
+
+              {gameStatus ===
+                "cleared" && (
 
                 <button
                   onClick={
-                    handleRetry
+                    handleContinue
                   }
-                  className="retry-btn"
+                  className="continue-btn"
                 >
-                  Retry
+                  CONTINUE
                 </button>
 
-                {/* CONTINUE */}
-
-                {gameStatus ===
-                  "cleared" && (
-
-                  <button
-                    onClick={
-                      handleContinue
-                    }
-                    className="continue-btn"
-                  >
-                    Continue
-                  </button>
-
-                )}
-
-              </div>
+              )}
 
             </div>
 
           </div>
 
-        )}
+        </div>
 
-      </div>
+      )}
 
     </div>
   );
