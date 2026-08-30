@@ -5,39 +5,9 @@
 .level-board {
   width: 100vw;
   height: 100vh;
-
   background: #B9E3E8;
-
   position: relative;
-
   overflow: hidden;
-}
-
-
-/* =====================================
-   TOP BAR
-===================================== */
-
-.top-bar {
-  position: absolute;
-
-  top: 20px;
-  left: 0;
-
-  width: 100%;
-
-  display: flex;
-
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 0 25px;
-
-  box-sizing: border-box;
-
-  z-index: 50;
-
-  pointer-events: none;
 }
 
 
@@ -45,22 +15,26 @@
    TOP ICONS
 ===================================== */
 
-.top-icon {
-  width: 40px;
-  height: 40px;
+.icon-btn {
+  position: absolute;
+  top: 20px;
 
-  object-fit: contain;
+  font-size: 28px;
+
+  border: none;
+  background: transparent;
 
   cursor: pointer;
 
-  pointer-events: auto;
-
-  transition:
-    transform 0.2s ease;
+  z-index: 20;
 }
 
-.top-icon:hover {
-  transform: scale(1.08);
+.home-btn {
+  left: 25px;
+}
+
+.sound-btn {
+  right: 25px;
 }
 
 
@@ -73,17 +47,12 @@
 
   top: 60px;
 
-  left: 0;
-
   width: 100%;
 
   text-align: center;
 
   z-index: 20;
-
-  pointer-events: none;
 }
-
 
 .level-title {
   font-size: 28px;
@@ -92,7 +61,6 @@
 
   color: #0F7F91;
 }
-
 
 .mission-box {
   margin-top: 10px;
@@ -120,7 +88,7 @@
   width: 800px;
   height: 700px;
 
-  z-index: 5;
+  position: relative;
 }
 
 
@@ -139,7 +107,6 @@
 
   z-index: 1;
 }
-
 
 .lines line {
   stroke: #0F7F91;
@@ -179,11 +146,8 @@
     background 0.15s ease;
 }
 
-
 .node:hover {
-  transform:
-    translate(-50%, -50%)
-    scale(1.05);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 
@@ -200,12 +164,11 @@
    HIGHLIGHT VALID MOVES
 ===================================== */
 
+/*
 .highlight-node {
-  background: #E8FFFF;
-
-  box-shadow:
-    0 0 0 5px rgba(15, 127, 145, 0.2);
+  background: yellow;
 }
+*/
 
 
 /* =====================================
@@ -274,11 +237,8 @@
     transform 0.15s ease;
 }
 
-
 .police-token:hover {
-  transform:
-    translate(-50%, -50%)
-    scale(1.05);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 
@@ -296,92 +256,44 @@
 ===================================== */
 
 .game-result-overlay {
-  position: fixed;
+  position: absolute;
 
   top: 0;
   left: 0;
 
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
 
   display: flex;
 
   align-items: center;
   justify-content: center;
 
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.25);
 
-  z-index: 9999;
-
-  overflow: hidden;
-
-  animation:
-    overlayFadeIn 0.35s ease-out;
-}
-
-
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  z-index: 100;
 }
 
 
 /* =====================================
-   RESULT BOX
+   RESULT POPUP
 ===================================== */
 
 .game-result {
-  position: relative;
+  width: 360px;
 
-  width: 420px;
+  padding: 35px 30px;
 
-  min-height: 250px;
+  background: white;
 
-  background: #ffffff;
-
-  border-radius: 10px;
-
-  padding: 20px 40px;
+  border-radius: 18px;
 
   text-align: center;
 
-  box-sizing: border-box;
-
   box-shadow:
-    0 15px 50px rgba(0, 0, 0, 0.25);
+    0 10px 35px rgba(0, 0, 0, 0.25);
 
-  z-index: 10001;
-
-  animation:
-    resultPopup 0.45s ease-out;
-}
-
-
-@keyframes resultPopup {
-
-  0% {
-    opacity: 0;
-
-    transform: scale(0.7);
-  }
-
-  70% {
-    opacity: 1;
-
-    transform: scale(1.05);
-  }
-
-  100% {
-    opacity: 1;
-
-    transform: scale(1);
-  }
-
+  animation: popupAppear 0.25s ease-out;
 }
 
 
@@ -390,11 +302,11 @@
 ===================================== */
 
 .game-result h2 {
-  margin: 10px 0 15px;
+  margin: 0 0 15px;
 
   font-size: 30px;
 
-  font-weight: 800;
+  font-weight: bold;
 
   color: #0F7F91;
 }
@@ -405,47 +317,11 @@
 ===================================== */
 
 .game-result p {
-  margin: 8px 0;
+  margin: 0 0 25px;
 
   font-size: 17px;
 
-  color: #444;
-}
-
-
-.completion-message {
-  font-weight: 600;
-
-  color: #0F7F91 !important;
-}
-
-
-/* =====================================
-   CELEBRATION STAR
-===================================== */
-
-.celebration-icon {
-  font-size: 55px;
-
-  color: #F5B700;
-
-  line-height: 1;
-
-  animation:
-    starPop 0.8s ease-in-out infinite alternate;
-}
-
-
-@keyframes starPop {
-
-  from {
-    transform: scale(1);
-  }
-
-  to {
-    transform: scale(1.15);
-  }
-
+  color: #555;
 }
 
 
@@ -457,35 +333,32 @@
   display: flex;
 
   justify-content: center;
+
   align-items: center;
 
   gap: 15px;
-
-  margin-top: 25px;
 }
 
 
 /* =====================================
-   RETRY / HOME BUTTON
+   RETRY / CONTINUE BUTTONS
 ===================================== */
 
 .retry-btn,
 .continue-btn {
   min-width: 110px;
 
-  padding: 12px 35px;
+  padding: 12px 22px;
 
   border: none;
 
-  border-radius: 10px;
+  border-radius: 8px;
 
   font-size: 16px;
 
-  font-weight: 700;
+  font-weight: 600;
 
   cursor: pointer;
-
-  color: white;
 
   transition:
     transform 0.2s ease,
@@ -494,20 +367,24 @@
 
 
 /* =====================================
-   RETRY
+   RETRY BUTTON
 ===================================== */
 
 .retry-btn {
   background: #0F7F91;
+
+  color: white;
 }
 
 
 /* =====================================
-   HOME
+   CONTINUE BUTTON
 ===================================== */
 
 .continue-btn {
   background: #00B050;
+
+  color: white;
 }
 
 
@@ -517,248 +394,42 @@
 
 .retry-btn:hover,
 .continue-btn:hover {
-  transform: translateY(-2px);
+  transform: scale(1.05);
 
   box-shadow:
-    0 5px 15px rgba(0, 0, 0, 0.2);
+    0 5px 12px rgba(0, 0, 0, 0.2);
 }
 
 
 /* =====================================
-   CONFETTI CONTAINER
+   POPUP ANIMATION
 ===================================== */
 
-.confetti-container {
-  position: fixed;
+@keyframes popupAppear {
 
-  inset: 0;
-
-  width: 100vw;
-  height: 100vh;
-
-  pointer-events: none;
-
-  overflow: hidden;
-
-  z-index: 10000;
-}
-
-
-/* =====================================
-   CONFETTI
-===================================== */
-
-.confetti {
-  position: absolute;
-
-  top: -20px;
-
-  left: var(--x);
-
-  width: 8px;
-  height: 14px;
-
-  background: #0F7F91;
-
-  animation:
-    confettiFall
-    var(--duration)
-    ease-in
-    var(--delay)
-    infinite;
-}
-
-
-.confetti:nth-child(3n) {
-  background: #F5B700;
-}
-
-
-.confetti:nth-child(3n + 1) {
-  background: #FF6B6B;
-}
-
-
-.confetti:nth-child(3n + 2) {
-  background: #4CAF50;
-}
-
-
-/* =====================================
-   CONFETTI ANIMATION
-===================================== */
-
-@keyframes confettiFall {
-
-  0% {
-    transform:
-      translateY(-20px)
-      rotate(0deg);
-
-    opacity: 1;
-  }
-
-  100% {
-    transform:
-      translateY(110vh)
-      rotate(720deg);
-
-    opacity: 0;
-  }
-
-}
-
-
-/* =====================================
-   CELEBRATION BURST
-===================================== */
-
-.celebration-burst {
-  position: fixed;
-
-  left: 50%;
-  top: 50%;
-
-  width: 10px;
-  height: 10px;
-
-  transform:
-    translate(-50%, -50%);
-
-  pointer-events: none;
-
-  z-index: 10002;
-}
-
-
-/* =====================================
-   BURST PARTICLES
-===================================== */
-
-.burst-particle {
-  position: absolute;
-
-  left: 0;
-  top: 0;
-
-  width: 7px;
-  height: 25px;
-
-  border-radius: 5px;
-
-  background: #F5B700;
-
-  transform-origin:
-    center 100px;
-
-  transform:
-    rotate(var(--angle))
-    translateY(-80px);
-
-  animation:
-    burstAnimation
-    1s
-    ease-out
-    forwards;
-}
-
-
-/* =====================================
-   BURST ANIMATION
-===================================== */
-
-@keyframes burstAnimation {
-
-  0% {
-    opacity: 1;
-
-    transform:
-      rotate(var(--angle))
-      translateY(0)
-      scale(0.5);
-  }
-
-  100% {
+  from {
     opacity: 0;
 
-    transform:
-      rotate(var(--angle))
-      translateY(-120px)
-      scale(1);
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: scale(1);
   }
 
 }
 
 
 /* =====================================
-   RESPONSIVE
+   RESPONSIVE BOARD
 ===================================== */
 
 @media (max-width: 850px) {
 
   .board-area {
-    width: 800px;
-
-    transform:
-      translateX(-50%)
-      scale(0.8);
-
-    transform-origin:
-      top center;
-  }
-
-}
-
-
-@media (max-width: 600px) {
-
-  .top-bar {
-    padding: 0 15px;
-  }
-
-  .top-icon {
-    width: 36px;
-    height: 36px;
-  }
-
-  .level-header {
-    top: 60px;
-  }
-
-  .level-title {
-    font-size: 24px;
-  }
-
-  .mission-box {
-    font-size: 16px;
-  }
-
-  .board-area {
-    transform:
-      translateX(-50%)
-      scale(0.65);
-
-    transform-origin:
-      top center;
-  }
-
-  .game-result {
-    width: 90vw;
-
-    max-width: 420px;
-
-    min-height: 230px;
-
-    padding:
-      20px 25px;
-  }
-
-  .game-result h2 {
-    font-size: 25px;
-  }
-
-  .game-result p {
-    font-size: 15px;
+    width: 95vw;
   }
 
 }
