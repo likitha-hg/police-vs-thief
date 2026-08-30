@@ -12,9 +12,13 @@ function ChaseAnimation() {
         ease: "easeInOut",
       }}
     >
-      <img src={splashBg} alt="Splash Background" />
+      <img
+        src={splashBg}
+        alt="Splash Background"
+      />
     </motion.div>
   );
 }
 
 export default ChaseAnimation;
+
